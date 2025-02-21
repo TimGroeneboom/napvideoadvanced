@@ -7,7 +7,9 @@
 // Local Includes
 #include "videofile.h"
 #include "video.h"
+#include "videoplayeradvanced.h"
 #include "videopixelformathandler.h"
+#include "concurrentqueue.h"
 
 // External Includes
 #include <nap/device.h>
@@ -20,28 +22,16 @@ namespace nap
     // Forward Declares
     class VideoAdvancedService;
 
-    class NAPAPI VideoPlayerAdvancedBase : public Device
-    {
-    RTTI_ENABLE(Device)
-    friend class VideoAdvancedService;
-    public:
-        VideoPlayerAdvancedBase(VideoAdvancedService& service);
-
-        virtual VideoPixelFormatHandlerBase& getPixelFormatHandler() = 0;
-    protected:
-        virtual void update(double deltaTime) = 0;
-
-        VideoAdvancedService& mService;
-    };
-
-    class NAPAPI VideoPlayerAdvanced : public VideoPlayerAdvancedBase
+    class NAPAPI ThreadedVideoPlayer : public VideoPlayerAdvancedBase
     {
     RTTI_ENABLE(VideoPlayerAdvancedBase)
         friend class VideoAdvancedService;
     public:
 
         // Constructor
-        VideoPlayerAdvanced(VideoAdvancedService& service);
+        ThreadedVideoPlayer(VideoAdvancedService& service);
+
+        virtual ~ThreadedVideoPlayer();
 
         /**
          * Starts playback of the current video at the given offset in seconds.
@@ -126,9 +116,7 @@ namespace nap
          */
         virtual void stop() override;
 
-        bool loadVideo(const std::string& filePath, utility::ErrorState& errorState);
-
-        bool hasVideo() const;
+        void loadVideo(const std::string& filePath);
 
         virtual VideoPixelFormatHandlerBase& getPixelFormatHandler() override;
 
@@ -142,15 +130,39 @@ namespace nap
          */
         void update(double deltaTime) override;
     private:
+        using Task = std::function<void()>;
         /**
          * Clear output textures to black
          */
         void clearTextures();
 
+        bool mVideoLoaded = false;								///< If a video is currently loaded
+
+        std::atomic_bool mRunning = false;							///< If the video is currently playing
+
+        std::thread mThread;										///< Thread for video playback
+        void onWork();
+
+        void enqueueMainThreadTask(const Task& task){ mMainThreadJobs.enqueue(task); }
+
+        void enqueueWorkThreadTask(const Task& task){ mWorkThreadJobs.enqueue(task); }
+
+        moodycamel::ConcurrentQueue<Task> mWorkThreadJobs;	///< Work queue for the thread
+        moodycamel::ConcurrentQueue<Task> mMainThreadJobs;	///< Work queue for the main thread
+
+        struct Impl;
+        std::unique_ptr<Impl> mImpl;
+
         nap::Video* mCurrentVideo = nullptr;					///< Current selected video context
         std::unique_ptr<nap::Video> mVideo;		                ///< The actual video
+
+        double mCurrentTime = 0.0;								///< Current playback time in seconds
+        double mDuration = 0.0;									///< Duration of the video in seconds
+        glm::vec2 mVideoSize = glm::vec2(0.0f);					///< Size of the video in pixels
+        bool mPlaying = false;									///< If the video is currently playing
+        double mStartTime = 0.0;					///< Start time of the video in seconds
     };
 
     // Object creator
-    using VideoPlayerAdvancedObjectCreator = rtti::ObjectCreator<VideoPlayerAdvanced, VideoAdvancedService>;
+    using ThreadedVideoPlayerObjectCreator = rtti::ObjectCreator<ThreadedVideoPlayer, VideoAdvancedService>;
 }

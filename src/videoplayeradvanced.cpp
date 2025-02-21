@@ -22,9 +22,9 @@ RTTI_END_CLASS
 RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::VideoPlayerAdvanced)
         RTTI_CONSTRUCTOR(nap::VideoAdvancedService &)
         RTTI_PROPERTY("Loop", &nap::VideoPlayerAdvanced::mLoop, nap::rtti::EPropertyMetaData::Default, "Loop the selected video")
-        RTTI_PROPERTY("VideoFiles", &nap::VideoPlayerAdvanced::mVideoFiles, nap::rtti::EPropertyMetaData::Embedded, "All video files")
-        RTTI_PROPERTY("VideoIndex", &nap::VideoPlayerAdvanced::mVideoIndex, nap::rtti::EPropertyMetaData::Default, "Selected video file index")
+        RTTI_PROPERTY("FilePath", &nap::VideoPlayerAdvanced::mFilePath, nap::rtti::EPropertyMetaData::Default | nap::rtti::EPropertyMetaData::FileLink, "Path to the video file, leave empty to not load file on init")
         RTTI_PROPERTY("Speed", &nap::VideoPlayerAdvanced::mSpeed, nap::rtti::EPropertyMetaData::Default, "Video playback speed")
+        RTTI_PROPERTY("PixelFormatHandler", &nap::VideoPlayerAdvanced::mPixelFormatHandler, nap::rtti::EPropertyMetaData::Required | nap::rtti::EPropertyMetaData::Embedded, "Pixel format handler for the video")
 RTTI_END_CLASS
 
 //////////////////////////////////////////////////////////////////////////
@@ -42,89 +42,131 @@ namespace nap
     { }
 
 
-    const nap::VideoFile& VideoPlayerAdvanced::getFile() const
+    bool VideoPlayerAdvanced::hasVideo() const
     {
-        assert(mCurrentVideoIndex < mVideoFiles.size());
-        return *mVideoFiles[mCurrentVideoIndex];
+        return mCurrentVideo != nullptr;
     }
 
 
-    const nap::Video& VideoPlayerAdvanced::getVideo() const
+    int VideoPlayerAdvanced::getWidth() const
     {
-        NAP_ASSERT_MSG(mCurrentVideo != nullptr, "No video selected");
-        return *mCurrentVideo;
+        if (!hasVideo())
+            return 0;
+
+        return mCurrentVideo->getWidth();
     }
 
 
-    nap::Video& VideoPlayerAdvanced::getVideo()
+    int VideoPlayerAdvanced::getHeight() const
     {
-        NAP_ASSERT_MSG(mCurrentVideo != nullptr, "No video selected");
-        return *mCurrentVideo;
+        if (!hasVideo())
+            return 0;
+
+        return mCurrentVideo->getHeight();
     }
 
 
-    bool VideoPlayerAdvanced::selectVideo(int index, utility::ErrorState& error)
+    double VideoPlayerAdvanced::getDuration() const
     {
-        // Update video index, bail if it's the same as we have currently selected
-        NAP_ASSERT_MSG(!mVideos.empty(), "No video contexts available, call start() before video selection");
-        int new_idx = math::clamp<int>(index, 0, mVideos.size() - 1);
-        if (mVideos[new_idx].get() == mCurrentVideo)
-            return true;
+        if (!hasVideo())
+            return 0.0;
 
+        return mCurrentVideo->getDuration();
+    }
+
+
+    float VideoPlayerAdvanced::getSpeed() const
+    {
+        return mSpeed;
+    }
+
+
+    bool VideoPlayerAdvanced::isLooping() const
+    {
+        return mLoop;
+    }
+
+
+    void VideoPlayerAdvanced::seek(double seconds)
+    {
+        if (!hasVideo())
+            return;
+
+        mCurrentVideo->seek(seconds);
+    }
+
+
+    double VideoPlayerAdvanced::getCurrentTime() const
+    {
+        if (!hasVideo())
+            return 0.0;
+
+        return mCurrentVideo->getCurrentTime();
+    }
+
+
+    bool VideoPlayerAdvanced::loadVideo(const std::string& path, utility::ErrorState& error)
+    {
         // Stop playback of current video if available
-        if (mCurrentVideo != nullptr)
+        if (hasVideo())
             mCurrentVideo->stop(true);
 
-        // Update selection
-        mCurrentVideo = mVideos[new_idx].get();
-        mCurrentVideoIndex = new_idx;
+        mCurrentVideo = nullptr;
 
-        // Store new width and height
-        float vid_x = mCurrentVideo->getWidth();
-        float vid_y = mCurrentVideo->getHeight();
+        auto new_video_file = std::make_unique<nap::VideoFile>();
+        new_video_file->mPath = path;
+        new_video_file->mID = math::generateUUID();
+        if(!new_video_file->init(error))
+        {
+            error.fail("%s: Unable to load video for file: %s", mID.c_str(), path.c_str());
+            return false;
+        }
+
+        auto new_video = std::make_unique<nap::Video>(new_video_file->mPath);
+        if(!new_video->init(error))
+        {
+            error.fail("%s: Unable to load video for file: %s", mID.c_str(), path.c_str());
+            return false;
+        }
+
+        // Update selection
+        mCurrentVideo = new_video.get();
 
         // Copy properties for playback
         mCurrentVideo->mLoop  = mLoop;
         mCurrentVideo->mSpeed = mSpeed;
 
-        // Check if textures need to be generated, this is the case when there are none,
-        // or when the dimensions have changed
-        if (!error.check(vid_x == mTexture->getWidth() && vid_y == mTexture->getHeight(),
-                         "Texture dimensions do not match video dimensions"))
+        if(!mPixelFormatHandler->initTextures({ mCurrentVideo->getWidth(), mCurrentVideo->getHeight() }, error))
             return false;
+
+        mVideo = std::move(new_video);
 
         return true;
     }
 
 
+    VideoPixelFormatHandlerBase& VideoPlayerAdvanced::getPixelFormatHandler()
+    {
+        return *mPixelFormatHandler;
+    }
+
+
     void VideoPlayerAdvanced::clearTextures()
     {
+        mPixelFormatHandler->clearTextures();
     }
 
 
     bool VideoPlayerAdvanced::start(utility::ErrorState& errorState)
     {
-        // Ensure there's at least 1 video
-        if (!errorState.check(mVideoFiles.size() > 0, "Playlist is empty"))
-            return false;
-
-        // Create all the unique video objects
-        mVideos.clear();
-        for (const auto& file : mVideoFiles)
+        if(!mFilePath.empty())
         {
-            // Create video and initialize
-            std::unique_ptr<nap::Video> new_video = std::make_unique<nap::Video>(file->mPath);
-            if (!new_video->init(errorState))
+            utility::ErrorState error;
+            if (!loadVideo(mFilePath, error))
             {
-                errorState.fail("%s: Unable to load video for file: %s", mID.c_str(), file->mPath.c_str());
-                return false;
+                nap::Logger::error(error.toString());
             }
-            mVideos.emplace_back(std::move(new_video));
         }
-
-        // Now select video, creates textures if required
-        if (!selectVideo(mVideoIndex, errorState))
-            return false;
 
         // Register device
         mService.registerPlayer(*this);
@@ -134,25 +176,36 @@ namespace nap
 
     void VideoPlayerAdvanced::play(double mStartTime, bool clearTheTextures)
     {
+        if(!hasVideo())
+            return;
+
         // Clear textures and start playback
         if(clearTheTextures)
             clearTextures();
 
-        getVideo().play(mStartTime);
+        mCurrentVideo->play(mStartTime);
     }
 
 
     void VideoPlayerAdvanced::loop(bool value)
     {
         mLoop = value;
-        getVideo().mLoop = mLoop;
+
+        if(!hasVideo())
+            return;
+
+        mCurrentVideo->mLoop = mLoop;
     }
 
 
     void VideoPlayerAdvanced::setSpeed(float speed)
     {
         mSpeed = speed;
-        getVideo().mSpeed = speed;
+
+        if(!hasVideo())
+            return;
+
+        mCurrentVideo->mSpeed = speed;
     }
 
 
@@ -162,25 +215,21 @@ namespace nap
         mService.removePlayer(*this);
 
         // Clear all videos
-        mVideos.clear();
         mCurrentVideo = nullptr;
-        mCurrentVideoIndex = 0;
     }
 
 
     void VideoPlayerAdvanced::update(double deltaTime)
     {
         // Bail if there's no selection or playback is disabled
-        if (mCurrentVideo == nullptr || !mCurrentVideo->isPlaying())
+        if (!hasVideo() || !mCurrentVideo->isPlaying())
             return;
 
         // Get frame and update contents
         Frame new_frame = mCurrentVideo->update(deltaTime);
         if (new_frame.isValid())
         {
-            // Copy data into texture
-            assert(mTexture != nullptr);
-            mTexture->update(new_frame.mFrame->data[0], mTexture->getWidth(), mTexture->getHeight(), new_frame.mFrame->linesize[0], ESurfaceChannels::RGBA);
+            mPixelFormatHandler->update(new_frame);
         }
 
         // Destroy frame that was allocated in the decode thread, after it has been processed

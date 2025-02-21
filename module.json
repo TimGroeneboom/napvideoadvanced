@@ -4,5 +4,9 @@
     "RequiredModules": [
         "napvideo"
     ],
-    "WindowsDllSearchPaths": []
+    "WindowsDllSearchPaths": [],
+    "DataSearchPaths": [
+        "{ROOT}/modules/napvideoadvanced/data",
+        "{ROOT}/modules/{MODULE_NAME}/data"
+    ]
 }

@@ -2,7 +2,8 @@
 #include "videoadvancedservice.h"
 #include "videoservice.h"
 #include "videoplayeradvanced.h"
-
+#include "videopixelformathandler.h"
+#include "threadedvideoplayer.h"
 
 // External Includes
 #include <nap/core.h>
@@ -61,6 +62,8 @@ namespace nap
 
     void VideoAdvancedService::registerObjectCreators(rtti::Factory &factory)
     {
-        factory.addObjectCreator(std::make_unique<HapPlayerObjectCreator>(*this));
+        factory.addObjectCreator(std::make_unique<VideoPlayerAdvancedObjectCreator>(*this));
+        factory.addObjectCreator(std::make_unique<VideoPixelFormatRGBAHandlerObjectCreator>(*this));
+        factory.addObjectCreator(std::make_unique<ThreadedVideoPlayerObjectCreator>(*this));
     }
 }
