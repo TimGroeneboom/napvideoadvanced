@@ -22,7 +22,7 @@ namespace nap
     // Forward Declares
     class VideoAdvancedService;
 
-    class NAPAPI ThreadedVideoPlayer : public VideoPlayerAdvancedBase
+    class NAPAPI ThreadedVideoPlayer final : public VideoPlayerAdvancedBase
     {
     RTTI_ENABLE(VideoPlayerAdvancedBase)
         friend class VideoAdvancedService;
@@ -112,12 +112,20 @@ namespace nap
         virtual bool start(utility::ErrorState& errorState) override;
 
         /**
-         * Stops the device
+         * Stops the device, don't call this directly, use stopPlayback() instead.
          */
         virtual void stop() override;
 
+        /**
+         * Load a video from a file path.
+         * @param filePath The path to the video file.
+         */
         void loadVideo(const std::string& filePath);
 
+        /**
+         * Load a video from a VideoFile resource.
+         * @return reference to the video file resource
+         */
         virtual VideoPixelFormatHandlerBase& getPixelFormatHandler() override;
 
         std::string mFilePath;									///< Property: 'FilePath' Path to the video file, leave empty to not load a video on init
@@ -139,7 +147,6 @@ namespace nap
         bool mVideoLoaded = false;								///< If a video is currently loaded
 
         std::atomic_bool mRunning = false;							///< If the video is currently playing
-
         std::thread mThread;										///< Thread for video playback
         void onWork();
 
@@ -160,7 +167,9 @@ namespace nap
         double mDuration = 0.0;									///< Duration of the video in seconds
         glm::vec2 mVideoSize = glm::vec2(0.0f);					///< Size of the video in pixels
         bool mPlaying = false;									///< If the video is currently playing
-        double mStartTime = 0.0;					///< Start time of the video in seconds
+        double mStartTime = 0.0;					            ///< Start time of the video in seconds
+        bool mHasAudio = false;									///< If the video has an audio stream
+
     };
 
     // Object creator

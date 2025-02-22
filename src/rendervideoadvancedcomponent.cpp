@@ -95,9 +95,8 @@ namespace nap
         if (!mPlane.init(errorState))
             return false;
 
+        // Get pixel format handler
         auto& pixel_format_handler = mPlayer->getPixelFormatHandler();
-        if (!pixel_format_handler.initMaterial(errorState))
-            return false;
 
         // Create the renderable mesh, which represents a valid mesh / material combination
         mRenderableMesh = mRenderService->createRenderableMesh(mPlane, pixel_format_handler.mMaterialInstance, errorState);

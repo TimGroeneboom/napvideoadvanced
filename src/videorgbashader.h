@@ -25,6 +25,9 @@ namespace nap
 		}
 	}
 
+    /**
+     * Video RGBA shader for rendering RGBA ideo frames.
+     */
 	class NAPAPI VideoRGBAShader : public Shader
 	{
 		RTTI_ENABLE(Shader)

@@ -85,6 +85,18 @@ namespace nap
     }
 
 
+    bool ThreadedVideoPlayer::isPlaying() const
+    {
+        return mPlaying;
+    }
+
+
+    bool ThreadedVideoPlayer::hasAudio() const
+    {
+        return mHasAudio;
+    }
+
+
     void ThreadedVideoPlayer::seek(double seconds)
     {
         if (!mVideoLoaded)
@@ -149,8 +161,9 @@ namespace nap
             mVideo = std::move(new_video);
 
             double duration = mCurrentVideo->getDuration();
+            bool has_audio = mCurrentVideo->hasAudio();
 
-            enqueueMainThreadTask([this, duration, size]()
+            enqueueMainThreadTask([this, duration, size, has_audio]()
             {
                 utility::ErrorState error;
                 if(!mPixelFormatHandler->initTextures(size, error))
@@ -161,6 +174,7 @@ namespace nap
                 {
                     mVideoSize = size;
                     mDuration = duration;
+                    mHasAudio = has_audio;
                     mVideoLoaded = true;
 
                     if(mPlaying)
@@ -299,9 +313,11 @@ namespace nap
                     frame.free();
 
                 double current_time_video = mCurrentVideo->getCurrentTime();
-                enqueueMainThreadTask([this, current_time_video]()
+                bool is_playing = mCurrentVideo->isPlaying();
+                enqueueMainThreadTask([this, current_time_video, is_playing]()
                 {
                     mCurrentTime = current_time_video;
+                    mPlaying = is_playing;
                 });
             }
 

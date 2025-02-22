@@ -1,0 +1,14 @@
+{
+    "Type": "nap::ProjectInfo",
+    "mID": "ProjectInfo",
+    "Title": "VideoAdvancedDemo",
+    "Version": "1.0.0",
+    "RequiredModules": [
+        "napvideoadvanceddemo",
+        "napapp",
+        "napparametergui"
+    ],
+    "Data": "data/default.json",
+    "ServiceConfig": "",
+    "PathMapping": "cache/path_mapping.json"
+}

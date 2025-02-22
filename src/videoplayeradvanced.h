@@ -7,7 +7,7 @@
 // Local Includes
 #include "videofile.h"
 #include "video.h"
-#include "videopixelformathandler.h"
+#include "videoplayeradvancedbase.h"
 
 // External Includes
 #include <nap/device.h>
@@ -20,28 +20,19 @@ namespace nap
     // Forward Declares
     class VideoAdvancedService;
 
-    class NAPAPI VideoPlayerAdvancedBase : public Device
-    {
-    RTTI_ENABLE(Device)
-    friend class VideoAdvancedService;
-    public:
-        VideoPlayerAdvancedBase(VideoAdvancedService& service);
-
-        virtual VideoPixelFormatHandlerBase& getPixelFormatHandler() = 0;
-    protected:
-        virtual void update(double deltaTime) = 0;
-
-        VideoAdvancedService& mService;
-    };
-
-    class NAPAPI VideoPlayerAdvanced : public VideoPlayerAdvancedBase
+    /**
+     * Advanced video player that can load videos dynamically.
+     * This player can be used to play videos with different pixel formats.
+     * See VideoPixelFormatHandler.h for available pixel format handlers.
+     */
+    class NAPAPI VideoPlayerAdvanced final : public VideoPlayerAdvancedBase
     {
     RTTI_ENABLE(VideoPlayerAdvancedBase)
         friend class VideoAdvancedService;
     public:
 
         // Constructor
-        VideoPlayerAdvanced(VideoAdvancedService& service);
+        explicit VideoPlayerAdvanced(VideoAdvancedService& service);
 
         /**
          * Starts playback of the current video at the given offset in seconds.
@@ -122,15 +113,27 @@ namespace nap
         virtual bool start(utility::ErrorState& errorState) override;
 
         /**
-         * Stops the device
+         * Stops the device, don't call this manually, use stopPlayback instead.
          */
         virtual void stop() override;
 
+        /**
+         * Load a video from a file.
+         * @param filePath path to video file
+         * @param errorState contains the error if the video can't be loaded
+         * @return true if the video was loaded successfully
+         */
         bool loadVideo(const std::string& filePath, utility::ErrorState& errorState);
 
+        /**
+         * @return if the player has a video loaded
+         */
         bool hasVideo() const;
 
-        virtual VideoPixelFormatHandlerBase& getPixelFormatHandler() override;
+        /**
+         * @return the pixel format handler for the video
+         */
+        VideoPixelFormatHandlerBase& getPixelFormatHandler() override;
 
         std::string mFilePath;									///< Property: 'FilePath' Path to the video file, leave empty to not load a video on init
         bool mLoop = false;										///< Property: 'Loop' if the selected video loops

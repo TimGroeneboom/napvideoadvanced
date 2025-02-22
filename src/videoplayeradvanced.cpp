@@ -32,9 +32,6 @@ RTTI_END_CLASS
 
 namespace nap
 {
-    VideoPlayerAdvancedBase::VideoPlayerAdvancedBase(VideoAdvancedService& service) :
-            mService(service)
-    { }
 
 
     VideoPlayerAdvanced::VideoPlayerAdvanced(VideoAdvancedService& service) :
@@ -129,6 +126,9 @@ namespace nap
             return false;
         }
 
+        if(!mPixelFormatHandler->initTextures({ mCurrentVideo->getWidth(), mCurrentVideo->getHeight() }, error))
+            return false;
+
         // Update selection
         mCurrentVideo = new_video.get();
 
@@ -136,12 +136,30 @@ namespace nap
         mCurrentVideo->mLoop  = mLoop;
         mCurrentVideo->mSpeed = mSpeed;
 
-        if(!mPixelFormatHandler->initTextures({ mCurrentVideo->getWidth(), mCurrentVideo->getHeight() }, error))
-            return false;
-
         mVideo = std::move(new_video);
 
         return true;
+    }
+
+
+    void VideoPlayerAdvanced::stopPlayback()
+    {
+        if (!hasVideo())
+            return;
+
+        mCurrentVideo->stop(true);
+    }
+
+
+    bool VideoPlayerAdvanced::hasAudio() const
+    {
+        return hasVideo() && mCurrentVideo->hasAudio();
+    }
+
+
+    bool VideoPlayerAdvanced::isPlaying() const
+    {
+        return hasVideo() && mCurrentVideo->isPlaying();
     }
 
 

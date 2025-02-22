@@ -1,0 +1,396 @@
+{
+    "Objects": [
+        {
+            "Type": "nap::Entity",
+            "mID": "CameraEntity",
+            "Components": [
+                {
+                    "Type": "nap::PerspCameraComponent",
+                    "mID": "PerspectiveCamera",
+                    "Properties": {
+                        "FieldOfView": 50.0,
+                        "NearClippingPlane": 1.0,
+                        "FarClippingPlane": 1000.0,
+                        "GridDimensions": {
+                            "x": 1,
+                            "y": 1
+                        },
+                        "GridLocation": {
+                            "x": 0,
+                            "y": 0
+                        }
+                    }
+                },
+                {
+                    "Type": "nap::TransformComponent",
+                    "mID": "CameraTransform",
+                    "Properties": {
+                        "Translate": {
+                            "x": 0.0,
+                            "y": 5.0,
+                            "z": 10.0
+                        },
+                        "Rotate": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "Scale": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 1.0
+                        },
+                        "UniformScale": 1.0
+                    }
+                },
+                {
+                    "Type": "nap::OrbitController",
+                    "mID": "OrbitController",
+                    "MovementSpeed": 0.5,
+                    "RotateSpeed": 0.004999999888241291,
+                    "PerspCameraComponent": "./PerspectiveCamera",
+                    "LimitZoomDistance": false,
+                    "MinimumZoomDistance": 0.5,
+                    "LookAtPosition": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    }
+                },
+                {
+                    "Type": "nap::PointerInputComponent",
+                    "mID": "CameraPointerInput"
+                }
+            ],
+            "Children": []
+        },
+        {
+            "Type": "nap::Entity",
+            "mID": "GnomonEntity",
+            "Components": [
+                {
+                    "Type": "nap::RenderGnomonComponent",
+                    "mID": "RenderGnomon",
+                    "Visible": true,
+                    "Tags": [],
+                    "Layer": "",
+                    "Gnomon": "Gnomon",
+                    "LineWidth": 1.0,
+                    "DepthMode": "ReadWrite"
+                },
+                {
+                    "Type": "nap::TransformComponent",
+                    "mID": "PositionGnomon",
+                    "Properties": {
+                        "Translate": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "Rotate": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "Scale": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 1.0
+                        },
+                        "UniformScale": 1.0
+                    }
+                }
+            ],
+            "Children": []
+        },
+        {
+            "Type": "nap::Entity",
+            "mID": "RenderVideoEntity",
+            "Components": [
+                {
+                    "Type": "nap::RenderVideoAdvancedComponent",
+                    "mID": "RenderComponent1",
+                    "Visible": true,
+                    "Tags": [],
+                    "Layer": "",
+                    "OutputTexture": "HapTexture1",
+                    "VideoPlayer": "HapPlayer1",
+                    "Samples": "One",
+                    "ClearColor": {
+                        "Values": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ]
+                    }
+                },
+                {
+                    "Type": "nap::RenderVideoAdvancedComponent",
+                    "mID": "RenderComponent2",
+                    "Visible": true,
+                    "Tags": [],
+                    "Layer": "",
+                    "OutputTexture": "HapTexture2",
+                    "VideoPlayer": "HapPlayer2",
+                    "Samples": "One",
+                    "ClearColor": {
+                        "Values": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ]
+                    }
+                },
+                {
+                    "Type": "nap::RenderVideoAdvancedComponent",
+                    "mID": "RenderComponent3",
+                    "Visible": true,
+                    "Tags": [],
+                    "Layer": "",
+                    "OutputTexture": "HapTexture3",
+                    "VideoPlayer": "HapPlayer3",
+                    "Samples": "One",
+                    "ClearColor": {
+                        "Values": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ]
+                    }
+                },
+                {
+                    "Type": "nap::RenderVideoAdvancedComponent",
+                    "mID": "RenderComponent4",
+                    "Visible": true,
+                    "Tags": [],
+                    "Layer": "",
+                    "OutputTexture": "HapTexture4",
+                    "VideoPlayer": "HapPlayer4",
+                    "Samples": "One",
+                    "ClearColor": {
+                        "Values": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ]
+                    }
+                },
+                {
+                    "Type": "nap::RenderVideoAdvancedComponent",
+                    "mID": "RenderComponent5",
+                    "Visible": true,
+                    "Tags": [],
+                    "Layer": "",
+                    "OutputTexture": "HapTexture5",
+                    "VideoPlayer": "HapPlayer5",
+                    "Samples": "One",
+                    "ClearColor": {
+                        "Values": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ]
+                    }
+                }
+            ],
+            "Children": []
+        },
+        {
+            "Type": "nap::GnomonMesh",
+            "mID": "Gnomon",
+            "Size": 1.0,
+            "Position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "Type": "nap::RenderTexture2D",
+            "mID": "HapTexture1",
+            "Usage": "Static",
+            "Width": 2048,
+            "Height": 2048,
+            "Format": "RGBA8",
+            "ColorSpace": "Linear",
+            "ClearColor": {
+                "Values": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+            }
+        },
+        {
+            "Type": "nap::RenderTexture2D",
+            "mID": "HapTexture2",
+            "Usage": "Static",
+            "Width": 2048,
+            "Height": 2048,
+            "Format": "RGBA8",
+            "ColorSpace": "Linear",
+            "ClearColor": {
+                "Values": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+            }
+        },
+        {
+            "Type": "nap::RenderTexture2D",
+            "mID": "HapTexture3",
+            "Usage": "Static",
+            "Width": 2048,
+            "Height": 2048,
+            "Format": "RGBA8",
+            "ColorSpace": "Linear",
+            "ClearColor": {
+                "Values": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+            }
+        },
+        {
+            "Type": "nap::RenderTexture2D",
+            "mID": "HapTexture4",
+            "Usage": "Static",
+            "Width": 2048,
+            "Height": 2048,
+            "Format": "RGBA8",
+            "ColorSpace": "Linear",
+            "ClearColor": {
+                "Values": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+            }
+        },
+        {
+            "Type": "nap::RenderTexture2D",
+            "mID": "HapTexture5",
+            "Usage": "Static",
+            "Width": 2048,
+            "Height": 2048,
+            "Format": "RGBA8",
+            "ColorSpace": "Linear",
+            "ClearColor": {
+                "Values": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+            }
+        },
+        {
+            "Type": "nap::RenderWindow",
+            "mID": "Window",
+            "Borderless": false,
+            "Resizable": true,
+            "Visible": true,
+            "SampleShading": true,
+            "Title": "Example Window",
+            "Width": 1280,
+            "Height": 720,
+            "Mode": "FIFO",
+            "ClearColor": {
+                "Values": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ]
+            },
+            "Samples": "Four",
+            "AdditionalSwapImages": 1,
+            "RestoreSize": true,
+            "RestorePosition": true
+        },
+        {
+            "Type": "nap::Scene",
+            "mID": "Scene",
+            "Entities": [
+                {
+                    "Entity": "GnomonEntity",
+                    "InstanceProperties": []
+                },
+                {
+                    "Entity": "CameraEntity",
+                    "InstanceProperties": []
+                },
+                {
+                    "Entity": "RenderVideoEntity",
+                    "InstanceProperties": []
+                }
+            ]
+        },
+        {
+            "Type": "nap::ThreadedVideoPlayer",
+            "mID": "HapPlayer1",
+            "Loop": true,
+            "FilePath": "people_hap.mov",
+            "Speed": 1.0,
+            "PixelFormatHandler": {
+                "Type": "nap::VideoPixelFormatRGBAHandler",
+                "mID": "VideoPixelFormatRGBAHandler_3bd440"
+            }
+        },
+        {
+            "Type": "nap::ThreadedVideoPlayer",
+            "mID": "HapPlayer2",
+            "Loop": true,
+            "FilePath": "people_hap.mov",
+            "Speed": 1.0,
+            "PixelFormatHandler": {
+                "Type": "nap::VideoPixelFormatRGBAHandler",
+                "mID": "VideoPixelFormatRGBAHandler_3bd240"
+            }
+        },
+        {
+            "Type": "nap::ThreadedVideoPlayer",
+            "mID": "HapPlayer3",
+            "Loop": true,
+            "FilePath": "people_hap.mov",
+            "Speed": 1.0,
+            "PixelFormatHandler": {
+                "Type": "nap::VideoPixelFormatRGBAHandler",
+                "mID": "VideoPixelFormatRGBAHandler_312340"
+            }
+        },
+        {
+            "Type": "nap::ThreadedVideoPlayer",
+            "mID": "HapPlayer4",
+            "Loop": true,
+            "FilePath": "people_yuv8.mp4",
+            "Speed": 1.0,
+            "PixelFormatHandler": {
+                "Type": "nap::VideoPixelFormatYUV16Handler",
+                "mID": "VideoPixelFormatYUV16Handler"
+            }
+        },
+        {
+            "Type": "nap::ThreadedVideoPlayer",
+            "mID": "HapPlayer5",
+            "Loop": true,
+            "FilePath": "people_yuv16.mov",
+            "Speed": 1.0,
+            "PixelFormatHandler": {
+                "Type": "nap::VideoPixelFormatYUV8Handler",
+                "mID": "VideoPixelFormatYUV8Handler"
+            }
+        }
+    ]
+}

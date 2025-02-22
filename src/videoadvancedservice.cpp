@@ -35,6 +35,7 @@ namespace nap
 
 	void VideoAdvancedService::getDependentServices(std::vector<rtti::TypeInfo>& dependencies)
 	{
+        dependencies.push_back(RTTI_OF(VideoService));
 	}
 	
 
@@ -65,5 +66,7 @@ namespace nap
         factory.addObjectCreator(std::make_unique<VideoPlayerAdvancedObjectCreator>(*this));
         factory.addObjectCreator(std::make_unique<VideoPixelFormatRGBAHandlerObjectCreator>(*this));
         factory.addObjectCreator(std::make_unique<ThreadedVideoPlayerObjectCreator>(*this));
+        factory.addObjectCreator(std::make_unique<VideoPixelFormatYUV8HandlerObjectCreator>(*this));
+        factory.addObjectCreator(std::make_unique<VideoPixelFormatYUV16HandlerObjectCreator>(*this));
     }
 }
