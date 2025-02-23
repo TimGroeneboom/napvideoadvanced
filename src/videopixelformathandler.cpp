@@ -20,15 +20,15 @@ RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::VideoPixelFormatHandlerBase)
 RTTI_END_CLASS
 
 RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::VideoPixelFormatRGBAHandler)
-        RTTI_CONSTRUCTOR(nap::VideoAdvancedService&)
+        RTTI_CONSTRUCTOR(nap::VideoAdvancedService&, int)
 RTTI_END_CLASS
 
 RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::VideoPixelFormatYUV8Handler)
-        RTTI_CONSTRUCTOR(nap::VideoAdvancedService&)
+        RTTI_CONSTRUCTOR(nap::VideoAdvancedService&, int)
 RTTI_END_CLASS
 
 RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::VideoPixelFormatYUV16Handler)
-        RTTI_CONSTRUCTOR(nap::VideoAdvancedService&)
+        RTTI_CONSTRUCTOR(nap::VideoAdvancedService&, int)
 RTTI_END_CLASS
 
 namespace nap
@@ -37,15 +37,15 @@ namespace nap
     //// VideoPixelFormatHandlerBase
     //////////////////////////////////////////////////////////////////////////
 
-    VideoPixelFormatHandlerBase::VideoPixelFormatHandlerBase(VideoAdvancedService& service) :
-            mService(service)
+    VideoPixelFormatHandlerBase::VideoPixelFormatHandlerBase(VideoAdvancedService& service, int pixelFormat) :
+            mService(service), mPixelFormat(pixelFormat)
     { }
 
 
     nap::UniformMat4Instance* VideoPixelFormatHandlerBase::ensureUniform(const std::string& uniformName, utility::ErrorState& error)
     {
         assert(mMVPStruct != nullptr);
-        UniformMat4Instance* found_uniform = mMVPStruct->getOrCreateUniform<UniformMat4Instance>(uniformName);
+        auto* found_uniform = mMVPStruct->getOrCreateUniform<UniformMat4Instance>(uniformName);
         if (!error.check(found_uniform != nullptr,
                          "unable to find uniform: %s in material: %s", uniformName.c_str(),
                          mMaterialInstance.getMaterial().mID.c_str()))
@@ -56,7 +56,7 @@ namespace nap
 
     nap::Sampler2DInstance* VideoPixelFormatHandlerBase::ensureSampler(const std::string& samplerName, utility::ErrorState& error)
     {
-        Sampler2DInstance* found_sampler = mMaterialInstance.getOrCreateSampler<Sampler2DInstance>(samplerName);
+        auto* found_sampler = mMaterialInstance.getOrCreateSampler<Sampler2DInstance>(samplerName);
         if (!error.check(found_sampler != nullptr,
                          "unable to find sampler: %s in material: %s", samplerName.c_str(),
                          mMaterialInstance.getMaterial().mID.c_str()))
@@ -64,27 +64,15 @@ namespace nap
         return found_sampler;
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    //// VideoPixelFormatRGBAHandler
-    //////////////////////////////////////////////////////////////////////////
 
-    VideoPixelFormatRGBAHandler::VideoPixelFormatRGBAHandler(VideoAdvancedService& service) :
-            VideoPixelFormatHandlerBase(service)
-    { }
-
-
-    bool VideoPixelFormatRGBAHandler::init(utility::ErrorState& errorState)
+    bool VideoPixelFormatHandlerBase::init(utility::ErrorState& errorState)
     {
-        // Initialize texture with dummy data
-        if (!initTextures({1, 1}, errorState))
-            return false;
-
         // Extract render service
         auto* render_service = mService.getCore().getService<RenderService>();
         assert(render_service != nullptr);
 
         // Get video material
-        Material* video_material = render_service->getOrCreateMaterial<VideoRGBAShader>(errorState);
+        Material* video_material = getOrCreateMaterial(errorState);
         if (!errorState.check(video_material != nullptr, "unable to get or create video material"))
             return false;
 
@@ -111,6 +99,27 @@ namespace nap
         if (mModelMatrixUniform == nullptr || mProjectMatrixUniform == nullptr || mViewMatrixUniform == nullptr)
             return false;
 
+        return true;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //// VideoPixelFormatRGBAHandler
+    //////////////////////////////////////////////////////////////////////////
+
+    VideoPixelFormatRGBAHandler::VideoPixelFormatRGBAHandler(VideoAdvancedService& service, int pixelFormat) :
+            VideoPixelFormatHandlerBase(service, pixelFormat)
+    { }
+
+
+    bool VideoPixelFormatRGBAHandler::init(utility::ErrorState& errorState)
+    {
+        if(!VideoPixelFormatHandlerBase::init(errorState))
+            return false;
+
+        // Initialize texture with dummy data
+        if (!initTextures({1, 1}, errorState))
+            return false;
+
         // Get sampler inputs to update from video material
         mSampler = ensureSampler(uniform::videorgba::sampler::RGBASampler, errorState);
         mSampler->setTexture(*mTexture);
@@ -125,12 +134,12 @@ namespace nap
 
     bool VideoPixelFormatRGBAHandler::initTextures(const glm::vec2& size, utility::ErrorState& errorState)
     {
-        if(mTexture == nullptr || mTexture->getWidth() != size.x || mTexture->getHeight() != size.y)
+        if(mTexture == nullptr || mTexture->getWidth() != static_cast<uint32_t>(size.x) || mTexture->getHeight() != static_cast<uint32_t>(size.y))
         {
             // Create texture description
             SurfaceDescriptor tex_description;
-            tex_description.mWidth = size.x;
-            tex_description.mHeight = size.y;
+            tex_description.mWidth = static_cast<uint32_t>(size.x);
+            tex_description.mHeight = static_cast<uint32_t>(size.y);
             tex_description.mColorSpace = EColorSpace::Linear;
             tex_description.mDataType = ESurfaceDataType::BYTE;
             tex_description.mChannels = ESurfaceChannels::RGBA;
@@ -145,6 +154,12 @@ namespace nap
             mSampler->setTexture(*mTexture);
 
         return true;
+    }
+
+
+    Material* VideoPixelFormatRGBAHandler::getOrCreateMaterial(utility::ErrorState& errorState)
+    {
+        return mService.getCore().getService<RenderService>()->getOrCreateMaterial<VideoRGBAShader>(errorState);
     }
 
 
@@ -169,47 +184,18 @@ namespace nap
     //// VideoPixelFormatYUV8Handler
     //////////////////////////////////////////////////////////////////////////
 
-    VideoPixelFormatYUV8Handler::VideoPixelFormatYUV8Handler(VideoAdvancedService& service) :
-            VideoPixelFormatHandlerBase(service)
+    VideoPixelFormatYUV8Handler::VideoPixelFormatYUV8Handler(VideoAdvancedService& service, int pixelFormat) :
+            VideoPixelFormatHandlerBase(service, pixelFormat)
     { }
 
 
     bool VideoPixelFormatYUV8Handler::init(utility::ErrorState& errorState)
     {
+        if(!VideoPixelFormatHandlerBase::init(errorState))
+            return false;
+
         // Initialize texture with dummy data
         if (!initTextures({2, 2}, errorState))
-            return false;
-
-        // Extract render service
-        auto* render_service = mService.getCore().getService<RenderService>();
-        assert(render_service != nullptr);
-
-        // Get video material
-        Material* video_material = render_service->getOrCreateMaterial<VideoShader>(errorState);
-        if (!errorState.check(video_material != nullptr, "unable to get or create video material"))
-            return false;
-
-        // Create resource for the video material instance
-        mMaterialInstanceResource.mBlendMode = EBlendMode::Opaque;
-        mMaterialInstanceResource.mDepthMode = EDepthMode::NoReadWrite;
-        mMaterialInstanceResource.mMaterial  = video_material;
-
-        // Initialize video material instance, used for rendering video
-        if (!mMaterialInstance.init(*render_service, mMaterialInstanceResource, errorState))
-            return false;
-
-        // Ensure the mvp struct is available
-        mMVPStruct = mMaterialInstance.getOrCreateUniform(uniform::mvpStruct);
-        if (!errorState.check(mMVPStruct != nullptr, "Unable to find uniform MVP struct: %s in material: %s",
-                              uniform::mvpStruct, mMaterialInstance.getMaterial().mID.c_str()))
-            return false;
-
-        // Get all matrices
-        mModelMatrixUniform = ensureUniform(uniform::modelMatrix, errorState);
-        mProjectMatrixUniform = ensureUniform(uniform::projectionMatrix, errorState);
-        mViewMatrixUniform = ensureUniform(uniform::viewMatrix, errorState);
-
-        if (mModelMatrixUniform == nullptr || mProjectMatrixUniform == nullptr || mViewMatrixUniform == nullptr)
             return false;
 
         // Get sampler inputs to update from video material
@@ -239,12 +225,12 @@ namespace nap
 
     bool VideoPixelFormatYUV8Handler::initTextures(const glm::vec2& size, utility::ErrorState& errorState)
     {
-        if(mYTexture == nullptr || mYTexture->getWidth() != size.x || mYTexture->getHeight() != size.y)
+        if(mYTexture == nullptr || mYTexture->getWidth() != static_cast<uint32_t>(size.x) || mYTexture->getHeight() != static_cast<uint32_t>(size.y))
         {
             // Create texture description
             SurfaceDescriptor tex_description;
-            tex_description.mWidth = size.x;
-            tex_description.mHeight = size.y;
+            tex_description.mWidth = static_cast<uint32_t>(size.x);
+            tex_description.mHeight = static_cast<uint32_t>(size.y);
             tex_description.mColorSpace = EColorSpace::Linear;
             tex_description.mDataType = ESurfaceDataType::BYTE;
             tex_description.mChannels = ESurfaceChannels::R;
@@ -258,8 +244,8 @@ namespace nap
             // Update dimensions for U and V texture
             float uv_x = size.x * 0.5f;
             float uv_y = size.y * 0.5f;
-            tex_description.mWidth  = uv_x;
-            tex_description.mHeight = uv_y;
+            tex_description.mWidth  = static_cast<uint32_t>(uv_x);
+            tex_description.mHeight = static_cast<uint32_t>(uv_y);
 
             // Create U
             mUTexture = std::make_unique<Texture2D>(mService.getCore());
@@ -292,18 +278,18 @@ namespace nap
         if(!mYTexture)
             return;
 
-        float vid_x  = mYTexture->getWidth();
-        float vid_y  = mYTexture->getHeight();
+        auto vid_x  = static_cast<float>(mYTexture->getWidth());
+        auto vid_y  = static_cast<float>(mYTexture->getHeight());
         float uv_x = vid_x * 0.5f;
         float uv_y = vid_y * 0.5f;
 
         // YUV420p to RGB conversion uses an 'offset' value of (-0.0625, -0.5, -0.5) in the shader.
         // This means that initializing the YUV planes to zero does not actually result in black output.
         // To fix this, we initialize the YUV planes to the negative of the offset
-        std::vector<uint8_t> y_default_data(vid_x * vid_y, 16);
+        std::vector<uint8_t> y_default_data(static_cast<size_t>(vid_x * vid_y), 16);
 
         // Initialize UV planes
-        std::vector<uint8_t> uv_default_data(uv_x * uv_y, 127);
+        std::vector<uint8_t> uv_default_data(static_cast<size_t>(uv_x * uv_y), 127);
 
         mYTexture->update(y_default_data.data(), mYTexture->getWidth(), mYTexture->getHeight(), mYTexture->getWidth(), ESurfaceChannels::R);
         mUTexture->update(uv_default_data.data(), mUTexture->getWidth(), mUTexture->getHeight(), mUTexture->getWidth(), ESurfaceChannels::R);
@@ -321,51 +307,28 @@ namespace nap
         mVTexture->update(frame.mFrame->data[2], mVTexture->getWidth(), mVTexture->getHeight(), frame.mFrame->linesize[2], ESurfaceChannels::R);
     }
 
+
+    Material* VideoPixelFormatYUV8Handler::getOrCreateMaterial(utility::ErrorState& errorState)
+    {
+        return mService.getCore().getService<RenderService>()->getOrCreateMaterial<VideoShader>(errorState);
+    }
+
     //////////////////////////////////////////////////////////////////////////
     //// VideoPixelFormatYUV16Handler
     //////////////////////////////////////////////////////////////////////////
 
-    VideoPixelFormatYUV16Handler::VideoPixelFormatYUV16Handler(VideoAdvancedService& service) :
-            VideoPixelFormatHandlerBase(service)
+    VideoPixelFormatYUV16Handler::VideoPixelFormatYUV16Handler(VideoAdvancedService& service, int pixelFormat) :
+            VideoPixelFormatHandlerBase(service, pixelFormat)
     { }
 
 
     bool VideoPixelFormatYUV16Handler::init(utility::ErrorState& errorState)
     {
+        if (!VideoPixelFormatHandlerBase::init(errorState))
+            return false;
+
         // Initialize texture with dummy data
         if (!initTextures({2, 2}, errorState))
-            return false;
-
-        // Extract render service
-        auto* render_service = mService.getCore().getService<RenderService>();
-        assert(render_service != nullptr);
-
-        // Get video material
-        Material* video_material = render_service->getOrCreateMaterial<VideoShader>(errorState);
-        if (!errorState.check(video_material != nullptr, "unable to get or create video material"))
-            return false;
-
-        // Create resource for the video material instance
-        mMaterialInstanceResource.mBlendMode = EBlendMode::Opaque;
-        mMaterialInstanceResource.mDepthMode = EDepthMode::NoReadWrite;
-        mMaterialInstanceResource.mMaterial  = video_material;
-
-        // Initialize video material instance, used for rendering video
-        if (!mMaterialInstance.init(*render_service, mMaterialInstanceResource, errorState))
-            return false;
-
-        // Ensure the mvp struct is available
-        mMVPStruct = mMaterialInstance.getOrCreateUniform(uniform::mvpStruct);
-        if (!errorState.check(mMVPStruct != nullptr, "Unable to find uniform MVP struct: %s in material: %s",
-                              uniform::mvpStruct, mMaterialInstance.getMaterial().mID.c_str()))
-            return false;
-
-        // Get all matrices
-        mModelMatrixUniform = ensureUniform(uniform::modelMatrix, errorState);
-        mProjectMatrixUniform = ensureUniform(uniform::projectionMatrix, errorState);
-        mViewMatrixUniform = ensureUniform(uniform::viewMatrix, errorState);
-
-        if (mModelMatrixUniform == nullptr || mProjectMatrixUniform == nullptr || mViewMatrixUniform == nullptr)
             return false;
 
         // Get sampler inputs to update from video material
@@ -395,12 +358,12 @@ namespace nap
 
     bool VideoPixelFormatYUV16Handler::initTextures(const glm::vec2& size, utility::ErrorState& errorState)
     {
-        if(mYTexture == nullptr || mYTexture->getWidth() != size.x || mYTexture->getHeight() != size.y)
+        if(mYTexture == nullptr || mYTexture->getWidth() != static_cast<int>(size.x) || mYTexture->getHeight() != static_cast<int>(size.y))
         {
             // Create texture description
             SurfaceDescriptor tex_description;
-            tex_description.mWidth = size.x;
-            tex_description.mHeight = size.y;
+            tex_description.mWidth = static_cast<int>(size.x);
+            tex_description.mHeight = static_cast<int>(size.y);
             tex_description.mColorSpace = EColorSpace::Linear;
             tex_description.mDataType = ESurfaceDataType::USHORT;
             tex_description.mChannels = ESurfaceChannels::R;
@@ -414,8 +377,8 @@ namespace nap
             // Update dimensions for U and V texture
             float uv_x = size.x;
             float uv_y = size.y;
-            tex_description.mWidth  = uv_x;
-            tex_description.mHeight = uv_y;
+            tex_description.mWidth  = static_cast<uint32_t>(uv_x);
+            tex_description.mHeight = static_cast<uint32_t>(uv_y);
 
             // Create U
             mUTexture = std::make_unique<Texture2D>(mService.getCore());
@@ -448,18 +411,18 @@ namespace nap
         if(!mYTexture)
             return;
 
-        float vid_x  = mYTexture->getWidth();
-        float vid_y  = mYTexture->getHeight();
+        auto vid_x  = static_cast<float>(mYTexture->getWidth());
+        auto vid_y  = static_cast<float>(mYTexture->getHeight());
         float uv_x = vid_x;
         float uv_y = vid_y;
 
         // YUV420p to RGB conversion uses an 'offset' value of (-0.0625, -0.5, -0.5) in the shader.
         // This means that initializing the YUV planes to zero does not actually result in black output.
         // To fix this, we initialize the YUV planes to the negative of the offset
-        std::vector<uint8_t> y_default_data(vid_x * vid_y * 2, 0);
+        std::vector<uint8_t> y_default_data(static_cast<size_t>(vid_x * vid_y * 2), 0);
 
         // Initialize UV planes
-        std::vector<uint8_t> uv_default_data(uv_x * uv_y * 2, 0);
+        std::vector<uint8_t> uv_default_data(static_cast<size_t>(uv_x * uv_y * 2), 0);
 
         mYTexture->update(y_default_data.data(), mYTexture->getWidth(), mYTexture->getHeight(), mYTexture->getWidth() * 2, ESurfaceChannels::R);
         mUTexture->update(uv_default_data.data(), mUTexture->getWidth(), mUTexture->getHeight(), mUTexture->getWidth() * 2, ESurfaceChannels::R);
@@ -477,6 +440,12 @@ namespace nap
         mVTexture->update(frame.mFrame->data[2], mVTexture->getWidth(), mVTexture->getHeight(), frame.mFrame->linesize[2], ESurfaceChannels::R);
     }
 
+
+    Material* VideoPixelFormatYUV16Handler::getOrCreateMaterial(utility::ErrorState& errorState)
+    {
+        return mService.getCore().getService<RenderService>()->getOrCreateMaterial<VideoShader>(errorState);
+    }
+
     //////////////////////////////////////////////////////////////////////////
     //// Utility
     //////////////////////////////////////////////////////////////////////////
@@ -489,19 +458,17 @@ namespace nap
             {
                 case AV_PIX_FMT_YUV420P:
                 case AV_PIX_FMT_YUVJ420P:
-                    return std::make_unique<VideoPixelFormatYUV8Handler>(service);
+                    return std::make_unique<VideoPixelFormatYUV8Handler>(service, pixelFormat);
                 case AV_PIX_FMT_YUV444P16BE:
                 case AV_PIX_FMT_YUV444P16LE:
-                    return std::make_unique<VideoPixelFormatYUV16Handler>(service);
+                    return std::make_unique<VideoPixelFormatYUV16Handler>(service, pixelFormat);
                 case AV_PIX_FMT_RGBA:
                 case AV_PIX_FMT_RGB0:
-                    return std::make_unique<VideoPixelFormatRGBAHandler>(service);
+                    return std::make_unique<VideoPixelFormatRGBAHandler>(service, pixelFormat);
                 default:
                     error.fail("Unsupported pixel format: %d", pixelFormat);
                     return nullptr;
             }
-
-            return nullptr;
         }
     }
 }

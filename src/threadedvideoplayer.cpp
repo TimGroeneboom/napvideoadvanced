@@ -162,26 +162,50 @@ namespace nap
             double duration = mCurrentVideo->getDuration();
             bool has_audio = mCurrentVideo->hasAudio();
             int pix_fmt = new_video_file->getPixelFormat();
+            bool create_new_pixel_format_handler = mPixelFormatHandler == nullptr || mPixelFormatHandler->getPixelFormat() != pix_fmt;
 
-            enqueueMainThreadTask([this, duration, size, has_audio, pix_fmt]()
+            enqueueMainThreadTask([this, duration, size, has_audio, pix_fmt, create_new_pixel_format_handler]()
             {
                 utility::ErrorState error;
 
-                auto pixel_format_handler = utility::createVideoPixelFormatHandler(pix_fmt, mService, error);
-                if(pixel_format_handler == nullptr)
+                std::unique_ptr<VideoPixelFormatHandlerBase> new_pixel_format_handler = nullptr;
+                VideoPixelFormatHandlerBase* pixel_format_handler_ptr = nullptr;
+                if(create_new_pixel_format_handler)
                 {
-                    nap::Logger::error("%s: Unable to create pixel format handler", mID.c_str());
-
-                    enqueueWorkThreadTask([this]()
+                    new_pixel_format_handler = utility::createVideoPixelFormatHandler(pix_fmt, mService, error);
+                    if(new_pixel_format_handler == nullptr)
                     {
-                        mCurrentVideo = nullptr;
-                        mVideo = nullptr;
-                    });
+                        nap::Logger::error("%s: Unable to create pixel format handler", mID.c_str());
 
-                    return;
+                        enqueueWorkThreadTask([this]()
+                                              {
+                                                  mCurrentVideo = nullptr;
+                                                  mVideo = nullptr;
+                                              });
+
+                        return;
+                    }
+
+                    if(!new_pixel_format_handler->init(error))
+                    {
+                        nap::Logger::error("%s: Unable to initialize pixel format handler", mID.c_str());
+
+                        enqueueWorkThreadTask([this]()
+                                              {
+                                                  mCurrentVideo = nullptr;
+                                                  mVideo = nullptr;
+                                              });
+
+                        return;
+                    }
+
+                    pixel_format_handler_ptr = new_pixel_format_handler.get();
+                }else
+                {
+                    pixel_format_handler_ptr = mPixelFormatHandler.get();
                 }
 
-                if(!pixel_format_handler->init(error))
+                if(!pixel_format_handler_ptr->initTextures(size, error))
                 {
                     nap::Logger::error("%s: Unable to initialize pixel format handler", mID.c_str());
 
@@ -194,21 +218,11 @@ namespace nap
                     return;
                 }
 
-                if(!pixel_format_handler->initTextures(size, error))
+                if(create_new_pixel_format_handler)
                 {
-                    nap::Logger::error("%s: Unable to initialize pixel format handler", mID.c_str());
-
-                    enqueueWorkThreadTask([this]()
-                    {
-                        mCurrentVideo = nullptr;
-                        mVideo = nullptr;
-                    });
-
-                    return;
+                    mPixelFormatHandler = std::move(new_pixel_format_handler);
+                    onPixelFormatHandlerChanged(*mPixelFormatHandler);
                 }
-
-                mPixelFormatHandler = std::move(pixel_format_handler);
-                onPixelFormatHandlerChanged(*mPixelFormatHandler);
 
                 mVideoSize = size;
                 mDuration = duration;
