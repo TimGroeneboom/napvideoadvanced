@@ -47,7 +47,7 @@ namespace nap
         assert(mMVPStruct != nullptr);
         UniformMat4Instance* found_uniform = mMVPStruct->getOrCreateUniform<UniformMat4Instance>(uniformName);
         if (!error.check(found_uniform != nullptr,
-                         "%s: unable to find uniform: %s in material: %s", this->mID.c_str(), uniformName.c_str(),
+                         "unable to find uniform: %s in material: %s", uniformName.c_str(),
                          mMaterialInstance.getMaterial().mID.c_str()))
             return nullptr;
         return found_uniform;
@@ -58,7 +58,7 @@ namespace nap
     {
         Sampler2DInstance* found_sampler = mMaterialInstance.getOrCreateSampler<Sampler2DInstance>(samplerName);
         if (!error.check(found_sampler != nullptr,
-                         "%s: unable to find sampler: %s in material: %s", this->mID.c_str(), samplerName.c_str(),
+                         "unable to find sampler: %s in material: %s", samplerName.c_str(),
                          mMaterialInstance.getMaterial().mID.c_str()))
             return nullptr;
         return found_sampler;
@@ -85,7 +85,7 @@ namespace nap
 
         // Get video material
         Material* video_material = render_service->getOrCreateMaterial<VideoRGBAShader>(errorState);
-        if (!errorState.check(video_material != nullptr, "%s: unable to get or create video material", mID.c_str()))
+        if (!errorState.check(video_material != nullptr, "unable to get or create video material"))
             return false;
 
         // Create resource for the video material instance
@@ -99,8 +99,8 @@ namespace nap
 
         // Ensure the mvp struct is available
         mMVPStruct = mMaterialInstance.getOrCreateUniform(uniform::mvpStruct);
-        if (!errorState.check(mMVPStruct != nullptr, "%s: Unable to find uniform MVP struct: %s in material: %s",
-                              this->mID.c_str(), uniform::mvpStruct, mMaterialInstance.getMaterial().mID.c_str()))
+        if (!errorState.check(mMVPStruct != nullptr, "Unable to find uniform MVP struct: %s in material: %s",
+                              uniform::mvpStruct, mMaterialInstance.getMaterial().mID.c_str()))
             return false;
 
         // Get all matrices
@@ -115,8 +115,8 @@ namespace nap
         mSampler = ensureSampler(uniform::videorgba::sampler::RGBASampler, errorState);
         mSampler->setTexture(*mTexture);
 
-        if (!errorState.check(mSampler != nullptr, "%s: Unable to find sampler: %s in material: %s",
-                              this->mID.c_str(), uniform::videorgba::sampler::RGBASampler, mMaterialInstance.getMaterial().mID.c_str()))
+        if (!errorState.check(mSampler != nullptr, "Unable to find sampler: %s in material: %s",
+                              uniform::videorgba::sampler::RGBASampler, mMaterialInstance.getMaterial().mID.c_str()))
             return false;
 
         return true;
@@ -186,7 +186,7 @@ namespace nap
 
         // Get video material
         Material* video_material = render_service->getOrCreateMaterial<VideoShader>(errorState);
-        if (!errorState.check(video_material != nullptr, "%s: unable to get or create video material", mID.c_str()))
+        if (!errorState.check(video_material != nullptr, "unable to get or create video material"))
             return false;
 
         // Create resource for the video material instance
@@ -200,8 +200,8 @@ namespace nap
 
         // Ensure the mvp struct is available
         mMVPStruct = mMaterialInstance.getOrCreateUniform(uniform::mvpStruct);
-        if (!errorState.check(mMVPStruct != nullptr, "%s: Unable to find uniform MVP struct: %s in material: %s",
-                              this->mID.c_str(), uniform::mvpStruct, mMaterialInstance.getMaterial().mID.c_str()))
+        if (!errorState.check(mMVPStruct != nullptr, "Unable to find uniform MVP struct: %s in material: %s",
+                              uniform::mvpStruct, mMaterialInstance.getMaterial().mID.c_str()))
             return false;
 
         // Get all matrices
@@ -217,16 +217,16 @@ namespace nap
         mUSampler = ensureSampler(uniform::video::sampler::USampler, errorState);
         mVSampler = ensureSampler(uniform::video::sampler::VSampler, errorState);
 
-        if (!errorState.check(mYSampler != nullptr, "%s: Unable to find sampler: %s in material: %s",
-                              this->mID.c_str(), uniform::video::sampler::YSampler, mMaterialInstance.getMaterial().mID.c_str()))
+        if (!errorState.check(mYSampler != nullptr, "Unable to find sampler: %s in material: %s",
+                              uniform::video::sampler::YSampler, mMaterialInstance.getMaterial().mID.c_str()))
             return false;
 
-        if (!errorState.check(mUSampler != nullptr, "%s: Unable to find sampler: %s in material: %s",
-                              this->mID.c_str(), uniform::video::sampler::USampler, mMaterialInstance.getMaterial().mID.c_str()))
+        if (!errorState.check(mUSampler != nullptr, "Unable to find sampler: %s in material: %s",
+                              uniform::video::sampler::USampler, mMaterialInstance.getMaterial().mID.c_str()))
             return false;
 
-        if (!errorState.check(mVSampler != nullptr, "%s: Unable to find sampler: %s in material: %s",
-                              this->mID.c_str(), uniform::video::sampler::VSampler, mMaterialInstance.getMaterial().mID.c_str()))
+        if (!errorState.check(mVSampler != nullptr, "Unable to find sampler: %s in material: %s",
+                              uniform::video::sampler::VSampler, mMaterialInstance.getMaterial().mID.c_str()))
             return false;
 
         mYSampler->setTexture(*mYTexture);
@@ -342,7 +342,7 @@ namespace nap
 
         // Get video material
         Material* video_material = render_service->getOrCreateMaterial<VideoShader>(errorState);
-        if (!errorState.check(video_material != nullptr, "%s: unable to get or create video material", mID.c_str()))
+        if (!errorState.check(video_material != nullptr, "unable to get or create video material"))
             return false;
 
         // Create resource for the video material instance
@@ -356,8 +356,8 @@ namespace nap
 
         // Ensure the mvp struct is available
         mMVPStruct = mMaterialInstance.getOrCreateUniform(uniform::mvpStruct);
-        if (!errorState.check(mMVPStruct != nullptr, "%s: Unable to find uniform MVP struct: %s in material: %s",
-                              this->mID.c_str(), uniform::mvpStruct, mMaterialInstance.getMaterial().mID.c_str()))
+        if (!errorState.check(mMVPStruct != nullptr, "Unable to find uniform MVP struct: %s in material: %s",
+                              uniform::mvpStruct, mMaterialInstance.getMaterial().mID.c_str()))
             return false;
 
         // Get all matrices
@@ -373,16 +373,16 @@ namespace nap
         mUSampler = ensureSampler(uniform::video::sampler::USampler, errorState);
         mVSampler = ensureSampler(uniform::video::sampler::VSampler, errorState);
 
-        if (!errorState.check(mYSampler != nullptr, "%s: Unable to find sampler: %s in material: %s",
-                              this->mID.c_str(), uniform::video::sampler::YSampler, mMaterialInstance.getMaterial().mID.c_str()))
+        if (!errorState.check(mYSampler != nullptr, "Unable to find sampler: %s in material: %s",
+                              uniform::video::sampler::YSampler, mMaterialInstance.getMaterial().mID.c_str()))
             return false;
 
-        if (!errorState.check(mUSampler != nullptr, "%s: Unable to find sampler: %s in material: %s",
-                              this->mID.c_str(), uniform::video::sampler::USampler, mMaterialInstance.getMaterial().mID.c_str()))
+        if (!errorState.check(mUSampler != nullptr, "Unable to find sampler: %s in material: %s",
+                              uniform::video::sampler::USampler, mMaterialInstance.getMaterial().mID.c_str()))
             return false;
 
-        if (!errorState.check(mVSampler != nullptr, "%s: Unable to find sampler: %s in material: %s",
-                              this->mID.c_str(), uniform::video::sampler::VSampler, mMaterialInstance.getMaterial().mID.c_str()))
+        if (!errorState.check(mVSampler != nullptr, "Unable to find sampler: %s in material: %s",
+                              uniform::video::sampler::VSampler, mMaterialInstance.getMaterial().mID.c_str()))
             return false;
 
         mYSampler->setTexture(*mYTexture);
@@ -456,10 +456,10 @@ namespace nap
         // YUV420p to RGB conversion uses an 'offset' value of (-0.0625, -0.5, -0.5) in the shader.
         // This means that initializing the YUV planes to zero does not actually result in black output.
         // To fix this, we initialize the YUV planes to the negative of the offset
-        std::vector<uint8_t> y_default_data(vid_x * vid_y * 2, 4095);
+        std::vector<uint8_t> y_default_data(vid_x * vid_y * 2, 0);
 
         // Initialize UV planes
-        std::vector<uint8_t> uv_default_data(uv_x * uv_y * 2, 32768);
+        std::vector<uint8_t> uv_default_data(uv_x * uv_y * 2, 0);
 
         mYTexture->update(y_default_data.data(), mYTexture->getWidth(), mYTexture->getHeight(), mYTexture->getWidth() * 2, ESurfaceChannels::R);
         mUTexture->update(uv_default_data.data(), mUTexture->getWidth(), mUTexture->getHeight(), mUTexture->getWidth() * 2, ESurfaceChannels::R);
@@ -475,5 +475,33 @@ namespace nap
         mYTexture->update(frame.mFrame->data[0], mYTexture->getWidth(), mYTexture->getHeight(), frame.mFrame->linesize[0], ESurfaceChannels::R);
         mUTexture->update(frame.mFrame->data[1], mUTexture->getWidth(), mUTexture->getHeight(), frame.mFrame->linesize[1], ESurfaceChannels::R);
         mVTexture->update(frame.mFrame->data[2], mVTexture->getWidth(), mVTexture->getHeight(), frame.mFrame->linesize[2], ESurfaceChannels::R);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //// Utility
+    //////////////////////////////////////////////////////////////////////////
+
+    namespace utility
+    {
+        std::unique_ptr<VideoPixelFormatHandlerBase> createVideoPixelFormatHandler(int pixelFormat, VideoAdvancedService& service, utility::ErrorState& error)
+        {
+            switch (pixelFormat)
+            {
+                case AV_PIX_FMT_YUV420P:
+                case AV_PIX_FMT_YUVJ420P:
+                    return std::make_unique<VideoPixelFormatYUV8Handler>(service);
+                case AV_PIX_FMT_YUV444P16BE:
+                case AV_PIX_FMT_YUV444P16LE:
+                    return std::make_unique<VideoPixelFormatYUV16Handler>(service);
+                case AV_PIX_FMT_RGBA:
+                case AV_PIX_FMT_RGB0:
+                    return std::make_unique<VideoPixelFormatRGBAHandler>(service);
+                default:
+                    error.fail("Unsupported pixel format: %d", pixelFormat);
+                    return nullptr;
+            }
+
+            return nullptr;
+        }
     }
 }

@@ -64,9 +64,6 @@ namespace nap
     void VideoAdvancedService::registerObjectCreators(rtti::Factory &factory)
     {
         factory.addObjectCreator(std::make_unique<VideoPlayerAdvancedObjectCreator>(*this));
-        factory.addObjectCreator(std::make_unique<VideoPixelFormatRGBAHandlerObjectCreator>(*this));
         factory.addObjectCreator(std::make_unique<ThreadedVideoPlayerObjectCreator>(*this));
-        factory.addObjectCreator(std::make_unique<VideoPixelFormatYUV8HandlerObjectCreator>(*this));
-        factory.addObjectCreator(std::make_unique<VideoPixelFormatYUV16HandlerObjectCreator>(*this));
     }
 }

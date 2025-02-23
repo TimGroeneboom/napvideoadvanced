@@ -95,15 +95,28 @@ namespace nap
         if (!mPlane.init(errorState))
             return false;
 
-        // Get pixel format handler
-        auto& pixel_format_handler = mPlayer->getPixelFormatHandler();
-
-        // Create the renderable mesh, which represents a valid mesh / material combination
-        mRenderableMesh = mRenderService->createRenderableMesh(mPlane, pixel_format_handler.mMaterialInstance, errorState);
-        if (!mRenderableMesh.isValid())
-            return false;
+        // Register for pixel format handler changes
+        mPlayer->onPixelFormatHandlerChanged.connect(mPixelFormatHandlerChangedSlot);
+        if(mPlayer->hasPixelFormatHandler())
+            onPixelFormatHandlerChanged(mPlayer->getPixelFormatHandler());
 
         return true;
+    }
+
+
+    void RenderVideoAdvancedComponentInstance::onPixelFormatHandlerChanged(VideoPixelFormatHandlerBase& pixelFormatHandler)
+    {
+        // Create the renderable mesh, which represents a valid mesh / material combination
+        utility::ErrorState error;
+        mRenderableMesh = mRenderService->createRenderableMesh(mPlane, pixelFormatHandler.mMaterialInstance, error);
+        if (!mRenderableMesh.isValid())
+        {
+            nap::Logger::error("%s: Unable to create renderable mesh", mID.c_str());
+            mValid = false;
+            return;
+        }
+
+        mValid = true;
     }
 
 
@@ -121,6 +134,9 @@ namespace nap
 
     void RenderVideoAdvancedComponentInstance::draw()
     {
+        if(!mValid)
+            return;
+
         // Get current command buffer, should be headless.
         VkCommandBuffer command_buffer = mRenderService->getCurrentCommandBuffer();
 

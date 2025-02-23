@@ -130,15 +130,9 @@ namespace nap
          */
         bool hasVideo() const;
 
-        /**
-         * @return the pixel format handler for the video
-         */
-        VideoPixelFormatHandlerBase& getPixelFormatHandler() override;
-
         std::string mFilePath;									///< Property: 'FilePath' Path to the video file, leave empty to not load a video on init
         bool mLoop = false;										///< Property: 'Loop' if the selected video loops
         float mSpeed = 1.0f;									///< Property: 'Speed' video playback speed
-        ResourcePtr<VideoPixelFormatHandlerBase> mPixelFormatHandler;	///< Property: 'PixelFormatHandler' Pixel format handler for the video
     protected:
         /**
          * Update textures, can only be called by the video service

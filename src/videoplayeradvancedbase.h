@@ -25,8 +25,15 @@ namespace nap
          * The video player pixel format handler
          * @return reference to the pixel format handler
          */
-        virtual VideoPixelFormatHandlerBase &getPixelFormatHandler() = 0;
+        VideoPixelFormatHandlerBase &getPixelFormatHandler() { return *mPixelFormatHandler; }
 
+        bool hasPixelFormatHandler() const { return mPixelFormatHandler != nullptr; }
+
+        // Properties
+        int mNumThreads = 0;	///< Property: 'NumThreads' number of threads to use for decoding. 0 means automatic.
+
+        // Signals
+        Signal<VideoPixelFormatHandlerBase&> onPixelFormatHandlerChanged;	///< Signal that is emitted when the pixel format handler changes
     protected:
         /**
          * Called by the video service to update the video player
@@ -36,5 +43,8 @@ namespace nap
 
         // Reference to the video service
         VideoAdvancedService &mService;
+
+        // Pixel format handler
+        std::unique_ptr<VideoPixelFormatHandlerBase> mPixelFormatHandler;
     };
 }

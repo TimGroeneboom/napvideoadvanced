@@ -24,7 +24,6 @@ RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::VideoPlayerAdvanced)
         RTTI_PROPERTY("Loop", &nap::VideoPlayerAdvanced::mLoop, nap::rtti::EPropertyMetaData::Default, "Loop the selected video")
         RTTI_PROPERTY("FilePath", &nap::VideoPlayerAdvanced::mFilePath, nap::rtti::EPropertyMetaData::Default | nap::rtti::EPropertyMetaData::FileLink, "Path to the video file, leave empty to not load file on init")
         RTTI_PROPERTY("Speed", &nap::VideoPlayerAdvanced::mSpeed, nap::rtti::EPropertyMetaData::Default, "Video playback speed")
-        RTTI_PROPERTY("PixelFormatHandler", &nap::VideoPlayerAdvanced::mPixelFormatHandler, nap::rtti::EPropertyMetaData::Required | nap::rtti::EPropertyMetaData::Embedded, "Pixel format handler for the video")
 RTTI_END_CLASS
 
 //////////////////////////////////////////////////////////////////////////
@@ -126,8 +125,21 @@ namespace nap
             return false;
         }
 
+        mPixelFormatHandler = utility::createVideoPixelFormatHandler(new_video_file->getPixelFormat(), mService, error);
+        if(mPixelFormatHandler == nullptr)
+        {
+            error.fail("%s: Unable to create pixel format handler", mID.c_str());
+            return false;
+        }
+
+        if(!mPixelFormatHandler->init(error))
+            return false;
+
         if(!mPixelFormatHandler->initTextures({ mCurrentVideo->getWidth(), mCurrentVideo->getHeight() }, error))
             return false;
+
+        //
+        onPixelFormatHandlerChanged(*mPixelFormatHandler);
 
         // Update selection
         mCurrentVideo = new_video.get();
@@ -163,15 +175,10 @@ namespace nap
     }
 
 
-    VideoPixelFormatHandlerBase& VideoPlayerAdvanced::getPixelFormatHandler()
-    {
-        return *mPixelFormatHandler;
-    }
-
-
     void VideoPlayerAdvanced::clearTextures()
     {
-        mPixelFormatHandler->clearTextures();
+        if(hasPixelFormatHandler())
+            mPixelFormatHandler->clearTextures();
     }
 
 

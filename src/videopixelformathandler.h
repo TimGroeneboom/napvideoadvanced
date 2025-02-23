@@ -15,11 +15,11 @@ namespace nap
      *
      * Also, a RenderVideoAdvancedComponentInstance uses a VideoPixelFormatHandler to render video frames.
      */
-    class NAPAPI VideoPixelFormatHandlerBase : public Resource
+    class NAPAPI VideoPixelFormatHandlerBase
     {
         friend class RenderVideoAdvancedComponentInstance;
 
-        RTTI_ENABLE(Resource)
+        RTTI_ENABLE()
     public:
         /**
          * Constructor
@@ -32,7 +32,7 @@ namespace nap
          * @param errorState reference to the error state containing the error message on failure
          * @return true if the materials were initialized correctly
          */
-        bool init(utility::ErrorState& errorState) override = 0;
+        virtual bool init(utility::ErrorState& errorState) = 0;
 
         /**
          * Initializes the textures, called by the video player, can be called multiple times
@@ -115,8 +115,6 @@ namespace nap
         Sampler2DInstance* mSampler = nullptr;  ///< Sampler used to sample the texture in the material
     };
 
-    using VideoPixelFormatRGBAHandlerObjectCreator = rtti::ObjectCreator<VideoPixelFormatRGBAHandler, VideoAdvancedService>;
-
     //////////////////////////////////////////////////////////////////////////
     //// YUV 8 Pixel Format Handler
     //////////////////////////////////////////////////////////////////////////
@@ -167,8 +165,6 @@ namespace nap
         Sampler2DInstance* mUSampler = nullptr; ///< U sampler used to sample the U texture in the material
         Sampler2DInstance* mVSampler = nullptr; ///< V sampler used to sample the V texture in the material
     };
-
-    using VideoPixelFormatYUV8HandlerObjectCreator = rtti::ObjectCreator<VideoPixelFormatYUV8Handler, VideoAdvancedService>;
 
     //////////////////////////////////////////////////////////////////////////
     //// YUV 16 Pixel Format Handler
@@ -221,5 +217,15 @@ namespace nap
         Sampler2DInstance* mVSampler = nullptr; ///< V sampler used to sample the V texture in the material
     };
 
-    using VideoPixelFormatYUV16HandlerObjectCreator = rtti::ObjectCreator<VideoPixelFormatYUV16Handler, VideoAdvancedService>;
+    namespace utility
+    {
+        /**
+         * Creates a VideoPixelFormatHandlerBase object based on the pixel format
+         * @param pixelFormat the pixel format
+         * @param service reference to the video service
+         * @param error reference to the error state containing the error message on failure
+         * @return the created VideoPixelFormatHandlerBase object, nullptr on failure
+         */
+        std::unique_ptr<VideoPixelFormatHandlerBase> createVideoPixelFormatHandler(int pixelFormat, VideoAdvancedService& service, utility::ErrorState& error);
+    }
 }

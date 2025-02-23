@@ -122,16 +122,9 @@ namespace nap
          */
         void loadVideo(const std::string& filePath);
 
-        /**
-         * Load a video from a VideoFile resource.
-         * @return reference to the video file resource
-         */
-        virtual VideoPixelFormatHandlerBase& getPixelFormatHandler() override;
-
         std::string mFilePath;									///< Property: 'FilePath' Path to the video file, leave empty to not load a video on init
         bool mLoop = false;										///< Property: 'Loop' if the selected video loops
         float mSpeed = 1.0f;									///< Property: 'Speed' video playback speed
-        ResourcePtr<VideoPixelFormatHandlerBase> mPixelFormatHandler;	///< Property: 'PixelFormatHandler' Pixel format handler for the video
     protected:
         /**
          * Update textures, can only be called by the video service
@@ -169,7 +162,6 @@ namespace nap
         bool mPlaying = false;									///< If the video is currently playing
         double mStartTime = 0.0;					            ///< Start time of the video in seconds
         bool mHasAudio = false;									///< If the video has an audio stream
-
     };
 
     // Object creator

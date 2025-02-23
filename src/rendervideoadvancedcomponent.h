@@ -89,5 +89,10 @@ namespace nap
         RenderableMesh				mRenderableMesh;								///< Valid Plane / Material combination
         RenderService*				mRenderService = nullptr;						///< Pointer to the render service
         bool						mDirty = true;									///< If the model matrix needs to be re-computed
+        bool                        mValid = false;                                 ///< If the component is valid
+
+        void onPixelFormatHandlerChanged(VideoPixelFormatHandlerBase& pixelFormatHandler);
+        Slot<VideoPixelFormatHandlerBase&> mPixelFormatHandlerChangedSlot = { this, &RenderVideoAdvancedComponentInstance::onPixelFormatHandlerChanged };
+
     };
 }

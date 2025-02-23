@@ -21,7 +21,6 @@ RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::ThreadedVideoPlayer)
         RTTI_PROPERTY("Loop", &nap::ThreadedVideoPlayer::mLoop, nap::rtti::EPropertyMetaData::Default, "Loop the selected video")
         RTTI_PROPERTY("FilePath", &nap::ThreadedVideoPlayer::mFilePath, nap::rtti::EPropertyMetaData::Default | nap::rtti::EPropertyMetaData::FileLink, "Path to the video file, leave empty to not load file on init")
         RTTI_PROPERTY("Speed", &nap::ThreadedVideoPlayer::mSpeed, nap::rtti::EPropertyMetaData::Default, "Video playback speed")
-        RTTI_PROPERTY("PixelFormatHandler", &nap::ThreadedVideoPlayer::mPixelFormatHandler, nap::rtti::EPropertyMetaData::Required | nap::rtti::EPropertyMetaData::Embedded, "Pixel format handler for the video")
 RTTI_END_CLASS
 
 //////////////////////////////////////////////////////////////////////////
@@ -142,7 +141,7 @@ namespace nap
                 return;
             }
 
-            auto new_video = std::make_unique<nap::Video>(new_video_file->mPath);
+            auto new_video = std::make_unique<nap::Video>(new_video_file->mPath, mNumThreads);
             if(!new_video->init(error))
             {
                 nap::Logger::error("%s: Unable to load video for file: %s", mID.c_str(), path.c_str());
@@ -162,44 +161,77 @@ namespace nap
 
             double duration = mCurrentVideo->getDuration();
             bool has_audio = mCurrentVideo->hasAudio();
+            int pix_fmt = new_video_file->getPixelFormat();
 
-            enqueueMainThreadTask([this, duration, size, has_audio]()
+            enqueueMainThreadTask([this, duration, size, has_audio, pix_fmt]()
             {
                 utility::ErrorState error;
-                if(!mPixelFormatHandler->initTextures(size, error))
+
+                auto pixel_format_handler = utility::createVideoPixelFormatHandler(pix_fmt, mService, error);
+                if(pixel_format_handler == nullptr)
+                {
+                    nap::Logger::error("%s: Unable to create pixel format handler", mID.c_str());
+
+                    enqueueWorkThreadTask([this]()
+                    {
+                        mCurrentVideo = nullptr;
+                        mVideo = nullptr;
+                    });
+
+                    return;
+                }
+
+                if(!pixel_format_handler->init(error))
                 {
                     nap::Logger::error("%s: Unable to initialize pixel format handler", mID.c_str());
-                    mVideo = nullptr;
-                }else
-                {
-                    mVideoSize = size;
-                    mDuration = duration;
-                    mHasAudio = has_audio;
-                    mVideoLoaded = true;
 
-                    if(mPlaying)
+                    enqueueWorkThreadTask([this]()
                     {
-                        double start_time = mStartTime;
-                        enqueueWorkThreadTask([this, start_time]()
-                        {
-                            mCurrentVideo->play(start_time);
-                        });
-                    }
+                        mCurrentVideo = nullptr;
+                        mVideo = nullptr;
+                    });
+
+                    return;
+                }
+
+                if(!pixel_format_handler->initTextures(size, error))
+                {
+                    nap::Logger::error("%s: Unable to initialize pixel format handler", mID.c_str());
+
+                    enqueueWorkThreadTask([this]()
+                    {
+                        mCurrentVideo = nullptr;
+                        mVideo = nullptr;
+                    });
+
+                    return;
+                }
+
+                mPixelFormatHandler = std::move(pixel_format_handler);
+                onPixelFormatHandlerChanged(*mPixelFormatHandler);
+
+                mVideoSize = size;
+                mDuration = duration;
+                mHasAudio = has_audio;
+                mVideoLoaded = true;
+
+                if(mPlaying)
+                {
+                    double start_time = mStartTime;
+                    enqueueWorkThreadTask([this, start_time]()
+                    {
+                        mCurrentVideo->play(start_time);
+                    });
                 }
             });
         });
     }
 
 
-    VideoPixelFormatHandlerBase& ThreadedVideoPlayer::getPixelFormatHandler()
-    {
-        return *mPixelFormatHandler;
-    }
-
-
     void ThreadedVideoPlayer::clearTextures()
     {
-        mPixelFormatHandler->clearTextures();
+        if(hasPixelFormatHandler())
+            mPixelFormatHandler->clearTextures();
     }
 
 
@@ -339,7 +371,7 @@ namespace nap
         Frame frame;
         while(mImpl->mFrames.try_dequeue(frame))
         {
-            if(frame.isValid())
+            if(frame.isValid() && mImpl->mFrames.size_approx() == 0)
                 mPixelFormatHandler->update(frame);
 
             frame.free();
