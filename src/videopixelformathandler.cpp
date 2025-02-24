@@ -470,5 +470,29 @@ namespace nap
                     return nullptr;
             }
         }
+
+
+        bool getVideoPixelFormatHandlerType(int pixelFormat, rtti::TypeInfo& typeInfo, utility::ErrorState& errorState)
+        {
+            switch (pixelFormat)
+            {
+                case AV_PIX_FMT_YUV420P:
+                case AV_PIX_FMT_YUVJ420P:
+                    typeInfo = rtti::TypeInfo::get<VideoPixelFormatYUV8Handler>();
+                    return true;
+                case AV_PIX_FMT_YUV444P16BE:
+                case AV_PIX_FMT_YUV444P16LE:
+                    typeInfo = rtti::TypeInfo::get<VideoPixelFormatYUV16Handler>();
+                    return true;
+                case AV_PIX_FMT_RGBA:
+                case AV_PIX_FMT_RGB0:
+                    typeInfo = rtti::TypeInfo::get<VideoPixelFormatRGBAHandler>();
+                    return true;
+                default:
+                    errorState.fail("Unsupported pixel format: %d", pixelFormat);
+                    return false;
+            }
+        }
+
     }
 }

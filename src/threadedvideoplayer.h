@@ -137,31 +137,43 @@ namespace nap
          */
         void clearTextures();
 
+        /**
+         * Enqueues a task to the work thread
+         * @param task the task to enqueue
+         */
+        void enqueueMainTask(const Task& task){ mMainThreadTasks.enqueue(task); }
+
+        /**
+         * Enqueues a task to the main thread
+         * @param task the task to enqueue
+         */
+        void enqueueWorkTask(const Task& task){ mWorkThreadTasks.enqueue(task); }
+
         bool mVideoLoaded = false;								///< If a video is currently loaded
 
         std::atomic_bool mRunning = false;							///< If the video is currently playing
         std::thread mThread;										///< Thread for video playback
         void onWork();
 
-        void enqueueMainThreadTask(const Task& task){ mMainThreadJobs.enqueue(task); }
+        moodycamel::ConcurrentQueue<Task> mWorkThreadTasks;	///< Work queue for the thread
+        moodycamel::ConcurrentQueue<Task> mMainThreadTasks;	///< Work queue for the main thread
 
-        void enqueueWorkThreadTask(const Task& task){ mWorkThreadJobs.enqueue(task); }
-
-        moodycamel::ConcurrentQueue<Task> mWorkThreadJobs;	///< Work queue for the thread
-        moodycamel::ConcurrentQueue<Task> mMainThreadJobs;	///< Work queue for the main thread
-
+        // Implementation, contains the frame queue
         struct Impl;
         std::unique_ptr<Impl> mImpl;
 
         nap::Video* mCurrentVideo = nullptr;					///< Current selected video context
         std::unique_ptr<nap::Video> mVideo;		                ///< The actual video
-
         double mCurrentTime = 0.0;								///< Current playback time in seconds
         double mDuration = 0.0;									///< Duration of the video in seconds
         glm::vec2 mVideoSize = glm::vec2(0.0f);					///< Size of the video in pixels
         bool mPlaying = false;									///< If the video is currently playing
         double mStartTime = 0.0;					            ///< Start time of the video in seconds
         bool mHasAudio = false;									///< If the video has an audio stream
+        std::atomic_bool mWorkDone = false;						///< If the worker thread is done
+        std::mutex mMutex;										///< Mutex for the update work signal
+        std::condition_variable mWorkSignal;					///< Signal for the update work
+        std::atomic_bool mUpdateWorker = false;					///< If the video needs to be updated
     };
 
     // Object creator

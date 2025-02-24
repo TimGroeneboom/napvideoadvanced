@@ -101,7 +101,7 @@ namespace nap
         if (!mVideoLoaded)
             return;
 
-        enqueueWorkThreadTask([this, seconds]()
+        enqueueWorkTask([this, seconds]()
         {
             if(mCurrentVideo != nullptr)
                 mCurrentVideo->seek(seconds);
@@ -120,18 +120,22 @@ namespace nap
 
     void ThreadedVideoPlayer::loadVideo(const std::string& path)
     {
+        // current video is not loaded
+        // if a video is loaded will be stopped and unloaded in the next cycle of the worker thread
         mVideoLoaded = false;
 
-        // Stop playback of current video if available
-        enqueueWorkThreadTask([this, path]()
+        enqueueWorkTask([this, path]()
         {
             utility::ErrorState error;
 
+            // stop current video
             if(mCurrentVideo!= nullptr)
                 mCurrentVideo->stop(true);
 
+            // delete current video
             mCurrentVideo = nullptr;
 
+            // Load video and initialize
             auto new_video_file = std::make_unique<nap::VideoFile>();
             new_video_file->mPath = path;
             new_video_file->mID = math::generateUUID();
@@ -141,6 +145,8 @@ namespace nap
                 return;
             }
 
+            // VideoFile has valid path & pixel format
+            // Proceed to load video
             auto new_video = std::make_unique<nap::Video>(new_video_file->mPath, mNumThreads);
             if(!new_video->init(error))
             {
@@ -159,57 +165,88 @@ namespace nap
 
             mVideo = std::move(new_video);
 
-            double duration = mCurrentVideo->getDuration();
-            bool has_audio = mCurrentVideo->hasAudio();
-            int pix_fmt = new_video_file->getPixelFormat();
-            bool create_new_pixel_format_handler = mPixelFormatHandler == nullptr || mPixelFormatHandler->getPixelFormat() != pix_fmt;
+            // copy some properties to the main thread
+            double duration = mCurrentVideo->getDuration(); // get duration
+            bool has_audio = mCurrentVideo->hasAudio(); // check if video has audio
+            int pix_fmt = new_video_file->getPixelFormat(); // get pixel format
 
-            enqueueMainThreadTask([this, duration, size, has_audio, pix_fmt, create_new_pixel_format_handler]()
+            // proceed creating pixel format handler on main thread if necessary
+            enqueueMainTask([this, duration, size, has_audio, pix_fmt]()
             {
+                // error state
                 utility::ErrorState error;
 
+                // pixel handler unique & raw pointer
                 std::unique_ptr<VideoPixelFormatHandlerBase> new_pixel_format_handler = nullptr;
                 VideoPixelFormatHandlerBase* pixel_format_handler_ptr = nullptr;
+
+                // determine if we need to create a new pixel format handler
+                // either the current pixel format handler is null or the pixel format is different
+                // in that case, we need to create a new pixel format handler
+                bool create_new_pixel_format_handler = false;
+                if(mPixelFormatHandler!= nullptr)
+                {
+                    rtti::TypeInfo pixel_format_handler_type = mPixelFormatHandler->get_type();
+                    if(utility::getVideoPixelFormatHandlerType(pix_fmt, pixel_format_handler_type, error))
+                    {
+                        if(pixel_format_handler_type != mPixelFormatHandler->get_type())
+                            create_new_pixel_format_handler = true;
+                    }
+                }else
+                {
+                    create_new_pixel_format_handler = true;
+                }
+
+                // if we need to create a new pixel format handler proceed doing so
                 if(create_new_pixel_format_handler)
                 {
+                    // create the new pixel handler and initialize it, if it fails, stop the video on worker thread
+                    // and delete it
                     new_pixel_format_handler = utility::createVideoPixelFormatHandler(pix_fmt, mService, error);
                     if(new_pixel_format_handler == nullptr)
                     {
                         nap::Logger::error("%s: Unable to create pixel format handler", mID.c_str());
 
-                        enqueueWorkThreadTask([this]()
-                                              {
-                                                  mCurrentVideo = nullptr;
-                                                  mVideo = nullptr;
-                                              });
+                        enqueueWorkTask([this]()
+                        {
+                            mCurrentVideo = nullptr;
+                            mVideo = nullptr;
+                        });
 
                         return;
                     }
 
+                    // initialize the pixel format handler
+                    // if it fails, stop the video on worker thread and delete it
                     if(!new_pixel_format_handler->init(error))
                     {
                         nap::Logger::error("%s: Unable to initialize pixel format handler", mID.c_str());
 
-                        enqueueWorkThreadTask([this]()
-                                              {
-                                                  mCurrentVideo = nullptr;
-                                                  mVideo = nullptr;
-                                              });
+                        enqueueWorkTask([this]()
+                        {
+                            mCurrentVideo = nullptr;
+                            mVideo = nullptr;
+                        });
 
                         return;
                     }
 
+                    // get the raw pointer of the new pixel format handler
                     pixel_format_handler_ptr = new_pixel_format_handler.get();
                 }else
                 {
+                    // get the raw pointer of the current pixel format handler
                     pixel_format_handler_ptr = mPixelFormatHandler.get();
                 }
 
+                // initialize the textures of the pixel format handler, this will delete and create new textures
+                // if the size of the video has changed
+                // if it fails, stop the video on worker thread and delete it
                 if(!pixel_format_handler_ptr->initTextures(size, error))
                 {
                     nap::Logger::error("%s: Unable to initialize pixel format handler", mID.c_str());
 
-                    enqueueWorkThreadTask([this]()
+                    enqueueWorkTask([this]()
                     {
                         mCurrentVideo = nullptr;
                         mVideo = nullptr;
@@ -218,21 +255,25 @@ namespace nap
                     return;
                 }
 
+                // if we created a new pixel format handler, move ownership and notify any listeners (like the render component)
+                // that the pixel format handler has changed
                 if(create_new_pixel_format_handler)
                 {
                     mPixelFormatHandler = std::move(new_pixel_format_handler);
                     onPixelFormatHandlerChanged(*mPixelFormatHandler);
                 }
 
+                // copy some properties to the main thread
                 mVideoSize = size;
                 mDuration = duration;
                 mHasAudio = has_audio;
                 mVideoLoaded = true;
 
+                // start playback if necessary
                 if(mPlaying)
                 {
                     double start_time = mStartTime;
-                    enqueueWorkThreadTask([this, start_time]()
+                    enqueueWorkTask([this, start_time]()
                     {
                         mCurrentVideo->play(start_time);
                     });
@@ -284,7 +325,7 @@ namespace nap
         if(!mVideoLoaded)
             return;
 
-        enqueueWorkThreadTask([this]()
+        enqueueWorkTask([this]()
         {
             if(mCurrentVideo!= nullptr)
                 mCurrentVideo->play(mStartTime);
@@ -296,7 +337,7 @@ namespace nap
     {
         mLoop = value;
 
-        enqueueWorkThreadTask([this, value]()
+        enqueueWorkTask([this, value]()
         {
             if(mCurrentVideo!= nullptr)
                 mCurrentVideo->mLoop = value;
@@ -308,7 +349,7 @@ namespace nap
     {
         mSpeed = speed;
 
-        enqueueWorkThreadTask([this, speed]()
+        enqueueWorkTask([this, speed]()
         {
             if(mCurrentVideo!= nullptr)
                 mCurrentVideo->mSpeed = speed;
@@ -321,13 +362,22 @@ namespace nap
         // Unregister player
         mService.removePlayer(*this);
 
-        enqueueWorkThreadTask([this]()
+        // stop video playback on worker thread
+        enqueueWorkTask([this]()
         {
             // Clear all videos
             mCurrentVideo = nullptr;
             mRunning = false;
         });
 
+        // wait for worker thread to finish
+        while(!mWorkDone)
+        {
+            mUpdateWorker = true;
+            mWorkSignal.notify_one();
+        }
+
+        // join worker thread
         if(mThread.joinable())
             mThread.join();
     }
@@ -335,13 +385,18 @@ namespace nap
 
     void ThreadedVideoPlayer::onWork()
     {
+        mWorkDone = false;
         SteadyTimeStamp time_stamp = SteadyClock::now();
         while(mRunning)
         {
-            if(mWorkThreadJobs.size_approx()>0)
+            // Update worker
+            mUpdateWorker = false;
+
+            // Execute queued tasks
+            if(mWorkThreadTasks.size_approx() > 0)
             {
                 Task task;
-                while(mWorkThreadJobs.try_dequeue(task))
+                while(mWorkThreadTasks.try_dequeue(task))
                     task();
             }
 
@@ -350,45 +405,61 @@ namespace nap
             double delta_time = std::chrono::duration<double>(current_time - time_stamp).count();
             time_stamp = current_time;
 
+            // Update video
             if(mCurrentVideo!= nullptr)
             {
+                // Update video and get frame
+                // if frame is valid, enqueue it to the main thread for processing
                 Frame frame = mCurrentVideo->update(delta_time);
                 if(frame.isValid())
                     mImpl->mFrames.enqueue(frame);
                 else
                     frame.free();
 
+                // Update current time and playing state on main thread
                 double current_time_video = mCurrentVideo->getCurrentTime();
                 bool is_playing = mCurrentVideo->isPlaying();
-                enqueueMainThreadTask([this, current_time_video, is_playing]()
+                enqueueMainTask([this, current_time_video, is_playing]()
                 {
                     mCurrentTime = current_time_video;
                     mPlaying = is_playing;
                 });
             }
 
-            // 100 fps = 10ms
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            // wait for update signal coming from the main thread
+            std::unique_lock<std::mutex> lock(mMutex);
+            mWorkSignal.wait(lock, [this] { return mUpdateWorker.load() || !mRunning.load(); });
         }
+
+        mWorkDone = true;
     }
 
 
     void ThreadedVideoPlayer::update(double deltaTime)
     {
-        if(mMainThreadJobs.size_approx()>0)
+        // Execute queued tasks queued from the worker thread
+        if(mMainThreadTasks.size_approx() > 0)
         {
             Task task;
-            while(mMainThreadJobs.try_dequeue(task))
+            while(mMainThreadTasks.try_dequeue(task))
                 task();
         }
 
+        // Process new frames
         Frame frame;
         while(mImpl->mFrames.try_dequeue(frame))
         {
+            // only process last valid frame
+            // this is to avoid processing frames that are not in sync with the main thread
             if(frame.isValid() && mImpl->mFrames.size_approx() == 0)
                 mPixelFormatHandler->update(frame);
 
             frame.free();
         }
+
+        // keep worker thread in lockstep with main thread
+        // signal worker thread to update
+        mUpdateWorker = true;
+        mWorkSignal.notify_one();
     }
 }

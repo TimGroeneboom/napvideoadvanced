@@ -260,5 +260,12 @@ namespace nap
          * @return the created VideoPixelFormatHandlerBase object, nullptr on failure
          */
         std::unique_ptr<VideoPixelFormatHandlerBase> createVideoPixelFormatHandler(int pixelFormat, VideoAdvancedService& service, utility::ErrorState& error);
+
+        /**
+         * Gets the type of the VideoPixelFormatHandlerBase object based on the pixel format
+         * @param pixelFormat the pixel format
+         * @return the type of the VideoPixelFormatHandlerBase object
+         */
+        bool getVideoPixelFormatHandlerType(int pixelFormat, rtti::TypeInfo& type, utility::ErrorState& error);
     }
 }
