@@ -93,7 +93,7 @@ namespace nap
     /**
      * Video pixel format handler for RGBA pixel format.
      */
-    class NAPAPI VideoPixelFormatRGBAHandler final : public VideoPixelFormatHandlerBase
+    class NAPAPI VideoPixelFormatRGBAP8Handler final : public VideoPixelFormatHandlerBase
     {
         RTTI_ENABLE(VideoPixelFormatHandlerBase)
     public:
@@ -101,7 +101,7 @@ namespace nap
          * Constructor
          * @param service reference to the video service
          */
-        VideoPixelFormatRGBAHandler(VideoAdvancedService& service, int pixelFormat);
+        VideoPixelFormatRGBAP8Handler(VideoAdvancedService& service, int pixelFormat);
 
         /**
          * Initializes the materials
@@ -139,13 +139,13 @@ namespace nap
     };
 
     //////////////////////////////////////////////////////////////////////////
-    //// YUV 8 Pixel Format Handler
+    //// YUV 420 8bit Pixel Format Handler
     //////////////////////////////////////////////////////////////////////////
 
     /**
      * Video pixel format handler for YUV 8 pixel format.
      */
-    class NAPAPI VideoPixelFormatYUV8Handler final : public VideoPixelFormatHandlerBase
+    class NAPAPI VideoPixelFormatYUV420P8Handler final : public VideoPixelFormatHandlerBase
     {
         RTTI_ENABLE(VideoPixelFormatHandlerBase)
     public:
@@ -153,7 +153,7 @@ namespace nap
          * Constructor
          * @param service reference to the video service
          */
-        VideoPixelFormatYUV8Handler(VideoAdvancedService& service, int pixelFormat);
+        VideoPixelFormatYUV420P8Handler(VideoAdvancedService& service, int pixelFormat);
 
         /**
          * Initializes the materials
@@ -195,13 +195,13 @@ namespace nap
     };
 
     //////////////////////////////////////////////////////////////////////////
-    //// YUV 16 Pixel Format Handler
+    //// YUV 444 16bit Pixel Format Handler
     //////////////////////////////////////////////////////////////////////////
 
     /**
-     * Video pixel format handler for YUV 16 pixel format.
+     * Video pixel format handler for YUV 444 16bit pixel format.
      */
-    class NAPAPI VideoPixelFormatYUV16Handler final : public VideoPixelFormatHandlerBase
+    class NAPAPI VideoPixelFormatYUV444P16Handler final : public VideoPixelFormatHandlerBase
     {
     RTTI_ENABLE(VideoPixelFormatHandlerBase)
     public:
@@ -209,7 +209,63 @@ namespace nap
          * Constructor
          * @param service reference to the video service
          */
-        VideoPixelFormatYUV16Handler(VideoAdvancedService& service, int pixelFormat);
+        VideoPixelFormatYUV444P16Handler(VideoAdvancedService& service, int pixelFormat);
+
+        /**
+         * Initializes the materials
+         * @param errorState reference to the error state containing the error message on failure
+         * @return true if the materials were initialized correctly
+         */
+        bool init(utility::ErrorState& errorState) override;
+
+        /**
+         * Initializes the textures, called by the video player, can be called multiple times
+         * @param size the size of the textures
+         * @param errorState reference to the error state containing the error message on failure
+         * @return true if the textures were initialized correctly
+         */
+        bool initTextures(const glm::vec2& size, utility::ErrorState& errorState) override;
+
+        /**
+         * Clears the textures
+         */
+        void clearTextures() override;
+
+        /**
+         * Updates the textures with the new video frame
+         * @param frame the video frame to update
+         */
+        void update(Frame& frame) override;
+    protected:
+        /**
+         * @return the material used to render the video frame
+         */
+        Material* getOrCreateMaterial(utility::ErrorState& errorState) override;
+    private:
+        std::unique_ptr<Texture2D> mYTexture;   ///< Y texture used to render the video frame
+        std::unique_ptr<Texture2D> mUTexture;   ///< U texture used to render the video frame
+        std::unique_ptr<Texture2D> mVTexture;   ///< V texture used to render the video frame
+        Sampler2DInstance* mYSampler = nullptr; ///< Y sampler used to sample the Y texture in the material
+        Sampler2DInstance* mUSampler = nullptr; ///< U sampler used to sample the U texture in the material
+        Sampler2DInstance* mVSampler = nullptr; ///< V sampler used to sample the V texture in the material
+    };
+
+    //////////////////////////////////////////////////////////////////////////
+    //// YUV 420 16bit Pixel Format Handler
+    //////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Video pixel format handler for YUV 420 16bit pixel format.
+     */
+    class NAPAPI VideoPixelFormatYUV420P16Handler final : public VideoPixelFormatHandlerBase
+    {
+    RTTI_ENABLE(VideoPixelFormatHandlerBase)
+    public:
+        /**
+         * Constructor
+         * @param service reference to the video service
+         */
+        VideoPixelFormatYUV420P16Handler(VideoAdvancedService& service, int pixelFormat);
 
         /**
          * Initializes the materials

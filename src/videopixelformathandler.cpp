@@ -19,15 +19,19 @@ extern "C"
 RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::VideoPixelFormatHandlerBase)
 RTTI_END_CLASS
 
-RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::VideoPixelFormatRGBAHandler)
+RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::VideoPixelFormatRGBAP8Handler)
         RTTI_CONSTRUCTOR(nap::VideoAdvancedService&, int)
 RTTI_END_CLASS
 
-RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::VideoPixelFormatYUV8Handler)
+RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::VideoPixelFormatYUV420P8Handler)
         RTTI_CONSTRUCTOR(nap::VideoAdvancedService&, int)
 RTTI_END_CLASS
 
-RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::VideoPixelFormatYUV16Handler)
+RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::VideoPixelFormatYUV444P16Handler)
+        RTTI_CONSTRUCTOR(nap::VideoAdvancedService&, int)
+RTTI_END_CLASS
+
+RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::VideoPixelFormatYUV420P16Handler)
         RTTI_CONSTRUCTOR(nap::VideoAdvancedService&, int)
 RTTI_END_CLASS
 
@@ -103,15 +107,15 @@ namespace nap
     }
 
     //////////////////////////////////////////////////////////////////////////
-    //// VideoPixelFormatRGBAHandler
+    //// VideoPixelFormatRGBAP8Handler
     //////////////////////////////////////////////////////////////////////////
 
-    VideoPixelFormatRGBAHandler::VideoPixelFormatRGBAHandler(VideoAdvancedService& service, int pixelFormat) :
+    VideoPixelFormatRGBAP8Handler::VideoPixelFormatRGBAP8Handler(VideoAdvancedService& service, int pixelFormat) :
             VideoPixelFormatHandlerBase(service, pixelFormat)
     { }
 
 
-    bool VideoPixelFormatRGBAHandler::init(utility::ErrorState& errorState)
+    bool VideoPixelFormatRGBAP8Handler::init(utility::ErrorState& errorState)
     {
         if(!VideoPixelFormatHandlerBase::init(errorState))
             return false;
@@ -132,7 +136,7 @@ namespace nap
     }
 
 
-    bool VideoPixelFormatRGBAHandler::initTextures(const glm::vec2& size, utility::ErrorState& errorState)
+    bool VideoPixelFormatRGBAP8Handler::initTextures(const glm::vec2& size, utility::ErrorState& errorState)
     {
         if(mTexture == nullptr || mTexture->getWidth() != static_cast<uint32_t>(size.x) || mTexture->getHeight() != static_cast<uint32_t>(size.y))
         {
@@ -157,13 +161,13 @@ namespace nap
     }
 
 
-    Material* VideoPixelFormatRGBAHandler::getOrCreateMaterial(utility::ErrorState& errorState)
+    Material* VideoPixelFormatRGBAP8Handler::getOrCreateMaterial(utility::ErrorState& errorState)
     {
         return mService.getCore().getService<RenderService>()->getOrCreateMaterial<VideoRGBAShader>(errorState);
     }
 
 
-    void VideoPixelFormatRGBAHandler::clearTextures()
+    void VideoPixelFormatRGBAP8Handler::clearTextures()
     {
         if(!mTexture)
             return;
@@ -173,7 +177,7 @@ namespace nap
     }
 
 
-    void VideoPixelFormatRGBAHandler::update(Frame& frame)
+    void VideoPixelFormatRGBAP8Handler::update(Frame& frame)
     {
         // Copy data into texture
         assert(mTexture != nullptr);
@@ -181,15 +185,15 @@ namespace nap
     }
 
     //////////////////////////////////////////////////////////////////////////
-    //// VideoPixelFormatYUV8Handler
+    //// VideoPixelFormatYUV420P8Handler
     //////////////////////////////////////////////////////////////////////////
 
-    VideoPixelFormatYUV8Handler::VideoPixelFormatYUV8Handler(VideoAdvancedService& service, int pixelFormat) :
+    VideoPixelFormatYUV420P8Handler::VideoPixelFormatYUV420P8Handler(VideoAdvancedService& service, int pixelFormat) :
             VideoPixelFormatHandlerBase(service, pixelFormat)
     { }
 
 
-    bool VideoPixelFormatYUV8Handler::init(utility::ErrorState& errorState)
+    bool VideoPixelFormatYUV420P8Handler::init(utility::ErrorState& errorState)
     {
         if(!VideoPixelFormatHandlerBase::init(errorState))
             return false;
@@ -223,7 +227,7 @@ namespace nap
     }
 
 
-    bool VideoPixelFormatYUV8Handler::initTextures(const glm::vec2& size, utility::ErrorState& errorState)
+    bool VideoPixelFormatYUV420P8Handler::initTextures(const glm::vec2& size, utility::ErrorState& errorState)
     {
         if(mYTexture == nullptr || mYTexture->getWidth() != static_cast<uint32_t>(size.x) || mYTexture->getHeight() != static_cast<uint32_t>(size.y))
         {
@@ -273,7 +277,7 @@ namespace nap
     }
 
 
-    void VideoPixelFormatYUV8Handler::clearTextures()
+    void VideoPixelFormatYUV420P8Handler::clearTextures()
     {
         if(!mYTexture)
             return;
@@ -297,7 +301,7 @@ namespace nap
     }
 
 
-    void VideoPixelFormatYUV8Handler::update(Frame& frame)
+    void VideoPixelFormatYUV420P8Handler::update(Frame& frame)
     {
         // Copy data into texture
         // Copy data into texture
@@ -308,21 +312,21 @@ namespace nap
     }
 
 
-    Material* VideoPixelFormatYUV8Handler::getOrCreateMaterial(utility::ErrorState& errorState)
+    Material* VideoPixelFormatYUV420P8Handler::getOrCreateMaterial(utility::ErrorState& errorState)
     {
         return mService.getCore().getService<RenderService>()->getOrCreateMaterial<VideoShader>(errorState);
     }
 
     //////////////////////////////////////////////////////////////////////////
-    //// VideoPixelFormatYUV16Handler
+    //// VideoPixelFormatYUV444P16Handler
     //////////////////////////////////////////////////////////////////////////
 
-    VideoPixelFormatYUV16Handler::VideoPixelFormatYUV16Handler(VideoAdvancedService& service, int pixelFormat) :
+    VideoPixelFormatYUV444P16Handler::VideoPixelFormatYUV444P16Handler(VideoAdvancedService& service, int pixelFormat) :
             VideoPixelFormatHandlerBase(service, pixelFormat)
     { }
 
 
-    bool VideoPixelFormatYUV16Handler::init(utility::ErrorState& errorState)
+    bool VideoPixelFormatYUV444P16Handler::init(utility::ErrorState& errorState)
     {
         if (!VideoPixelFormatHandlerBase::init(errorState))
             return false;
@@ -356,7 +360,7 @@ namespace nap
     }
 
 
-    bool VideoPixelFormatYUV16Handler::initTextures(const glm::vec2& size, utility::ErrorState& errorState)
+    bool VideoPixelFormatYUV444P16Handler::initTextures(const glm::vec2& size, utility::ErrorState& errorState)
     {
         if(mYTexture == nullptr || mYTexture->getWidth() != static_cast<int>(size.x) || mYTexture->getHeight() != static_cast<int>(size.y))
         {
@@ -406,7 +410,7 @@ namespace nap
     }
 
 
-    void VideoPixelFormatYUV16Handler::clearTextures()
+    void VideoPixelFormatYUV444P16Handler::clearTextures()
     {
         if(!mYTexture)
             return;
@@ -430,7 +434,7 @@ namespace nap
     }
 
 
-    void VideoPixelFormatYUV16Handler::update(Frame& frame)
+    void VideoPixelFormatYUV444P16Handler::update(Frame& frame)
     {
         // Copy data into texture
         // Copy data into texture
@@ -441,7 +445,139 @@ namespace nap
     }
 
 
-    Material* VideoPixelFormatYUV16Handler::getOrCreateMaterial(utility::ErrorState& errorState)
+    Material* VideoPixelFormatYUV444P16Handler::getOrCreateMaterial(utility::ErrorState& errorState)
+    {
+        return mService.getCore().getService<RenderService>()->getOrCreateMaterial<VideoShader>(errorState);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //// VideoPixelFormatYUV420P16Handler
+    //////////////////////////////////////////////////////////////////////////
+
+    VideoPixelFormatYUV420P16Handler::VideoPixelFormatYUV420P16Handler(VideoAdvancedService& service, int pixelFormat) :
+            VideoPixelFormatHandlerBase(service, pixelFormat)
+    { }
+
+
+    bool VideoPixelFormatYUV420P16Handler::init(utility::ErrorState& errorState)
+    {
+        if(!VideoPixelFormatHandlerBase::init(errorState))
+            return false;
+
+        // Initialize texture with dummy data
+        if (!initTextures({2, 2}, errorState))
+            return false;
+
+        // Get sampler inputs to update from video material
+        mYSampler = ensureSampler(uniform::video::sampler::YSampler, errorState);
+        mUSampler = ensureSampler(uniform::video::sampler::USampler, errorState);
+        mVSampler = ensureSampler(uniform::video::sampler::VSampler, errorState);
+
+        if (!errorState.check(mYSampler != nullptr, "Unable to find sampler: %s in material: %s",
+                              uniform::video::sampler::YSampler, mMaterialInstance.getMaterial().mID.c_str()))
+            return false;
+
+        if (!errorState.check(mUSampler != nullptr, "Unable to find sampler: %s in material: %s",
+                              uniform::video::sampler::USampler, mMaterialInstance.getMaterial().mID.c_str()))
+            return false;
+
+        if (!errorState.check(mVSampler != nullptr, "Unable to find sampler: %s in material: %s",
+                              uniform::video::sampler::VSampler, mMaterialInstance.getMaterial().mID.c_str()))
+            return false;
+
+        mYSampler->setTexture(*mYTexture);
+        mUSampler->setTexture(*mUTexture);
+        mVSampler->setTexture(*mVTexture);
+
+        return true;
+    }
+
+
+    bool VideoPixelFormatYUV420P16Handler::initTextures(const glm::vec2& size, utility::ErrorState& errorState)
+    {
+        if(mYTexture == nullptr || mYTexture->getWidth() != static_cast<uint32_t>(size.x) || mYTexture->getHeight() != static_cast<uint32_t>(size.y))
+        {
+            // Create texture description
+            SurfaceDescriptor tex_description;
+            tex_description.mWidth = static_cast<uint32_t>(size.x);
+            tex_description.mHeight = static_cast<uint32_t>(size.y);
+            tex_description.mColorSpace = EColorSpace::Linear;
+            tex_description.mDataType = ESurfaceDataType::USHORT;
+            tex_description.mChannels = ESurfaceChannels::R;
+
+            // Create Y Texture
+            mYTexture = std::make_unique<Texture2D>(mService.getCore());
+            mYTexture->mUsage = Texture::EUsage::DynamicWrite;
+            if (!mYTexture->init(tex_description, false, 0, errorState))
+                return false;
+
+            // Update dimensions for U and V texture
+            float uv_x = size.x * 0.5f;
+            float uv_y = size.y * 0.5f;
+            tex_description.mWidth  = static_cast<uint32_t>(uv_x);
+            tex_description.mHeight = static_cast<uint32_t>(uv_y);
+
+            // Create U
+            mUTexture = std::make_unique<Texture2D>(mService.getCore());
+            mUTexture->mUsage = Texture::EUsage::DynamicWrite;
+            if (!mUTexture->init(tex_description, false, 0, errorState))
+                return false;
+
+            // Create V Texture
+            mVTexture = std::make_unique<Texture2D>(mService.getCore());
+            mVTexture->mUsage = Texture::EUsage::DynamicWrite;
+            if (!mVTexture->init(tex_description, false, 0, errorState))
+                return false;
+        }
+
+        if(mYSampler!= nullptr)
+            mYSampler->setTexture(*mYTexture);
+
+        if(mUSampler!= nullptr)
+            mUSampler->setTexture(*mUTexture);
+
+        if(mVSampler!= nullptr)
+            mVSampler->setTexture(*mVTexture);
+
+        return true;
+    }
+
+
+    void VideoPixelFormatYUV420P16Handler::clearTextures()
+    {
+        if(!mYTexture)
+            return;
+
+        auto vid_x  = static_cast<float>(mYTexture->getWidth());
+        auto vid_y  = static_cast<float>(mYTexture->getHeight());
+        float uv_x = vid_x * 0.5f;
+        float uv_y = vid_y * 0.5f;
+
+        // YUV420p to RGB conversion uses an 'offset' value of (-0.0625, -0.5, -0.5) in the shader.
+        // This means that initializing the YUV planes to zero does not actually result in black output.
+        // To fix this, we initialize the YUV planes to the negative of the offset
+        std::vector<uint8_t> y_default_data(static_cast<size_t>(vid_x * vid_y * 2), 0);
+
+        // Initialize UV planes
+        std::vector<uint8_t> uv_default_data(static_cast<size_t>(uv_x * uv_y * 2), 0);
+
+        mYTexture->update(y_default_data.data(), mYTexture->getWidth(), mYTexture->getHeight(), mYTexture->getWidth() * 2, ESurfaceChannels::R);
+        mUTexture->update(uv_default_data.data(), mUTexture->getWidth(), mUTexture->getHeight(), mUTexture->getWidth() * 2, ESurfaceChannels::R);
+        mVTexture->update(uv_default_data.data(), mVTexture->getWidth(), mVTexture->getHeight(), mVTexture->getWidth() * 2, ESurfaceChannels::R);
+    }
+
+
+    void VideoPixelFormatYUV420P16Handler::update(Frame& frame)
+    {
+        // Copy data into texture
+        assert(mYTexture != nullptr);
+        mYTexture->update(frame.mFrame->data[0], mYTexture->getWidth(), mYTexture->getHeight(), frame.mFrame->linesize[0], ESurfaceChannels::R);
+        mUTexture->update(frame.mFrame->data[1], mUTexture->getWidth(), mUTexture->getHeight(), frame.mFrame->linesize[1], ESurfaceChannels::R);
+        mVTexture->update(frame.mFrame->data[2], mVTexture->getWidth(), mVTexture->getHeight(), frame.mFrame->linesize[2], ESurfaceChannels::R);
+    }
+
+
+    Material* VideoPixelFormatYUV420P16Handler::getOrCreateMaterial(utility::ErrorState& errorState)
     {
         return mService.getCore().getService<RenderService>()->getOrCreateMaterial<VideoShader>(errorState);
     }
@@ -458,13 +594,16 @@ namespace nap
             {
                 case AV_PIX_FMT_YUV420P:
                 case AV_PIX_FMT_YUVJ420P:
-                    return std::make_unique<VideoPixelFormatYUV8Handler>(service, pixelFormat);
+                    return std::make_unique<VideoPixelFormatYUV420P8Handler>(service, pixelFormat);
                 case AV_PIX_FMT_YUV444P16BE:
                 case AV_PIX_FMT_YUV444P16LE:
-                    return std::make_unique<VideoPixelFormatYUV16Handler>(service, pixelFormat);
+                    return std::make_unique<VideoPixelFormatYUV444P16Handler>(service, pixelFormat);
+                case AV_PIX_FMT_YUV420P16LE:
+                case AV_PIX_FMT_YUV420P16BE:
+                    return std::make_unique<VideoPixelFormatYUV420P16Handler>(service, pixelFormat);
                 case AV_PIX_FMT_RGBA:
                 case AV_PIX_FMT_RGB0:
-                    return std::make_unique<VideoPixelFormatRGBAHandler>(service, pixelFormat);
+                    return std::make_unique<VideoPixelFormatRGBAP8Handler>(service, pixelFormat);
                 default:
                     error.fail("Unsupported pixel format: %d", pixelFormat);
                     return nullptr;
@@ -478,15 +617,19 @@ namespace nap
             {
                 case AV_PIX_FMT_YUV420P:
                 case AV_PIX_FMT_YUVJ420P:
-                    typeInfo = rtti::TypeInfo::get<VideoPixelFormatYUV8Handler>();
+                    typeInfo = rtti::TypeInfo::get<VideoPixelFormatYUV420P8Handler>();
                     return true;
                 case AV_PIX_FMT_YUV444P16BE:
                 case AV_PIX_FMT_YUV444P16LE:
-                    typeInfo = rtti::TypeInfo::get<VideoPixelFormatYUV16Handler>();
+                    typeInfo = rtti::TypeInfo::get<VideoPixelFormatYUV444P16Handler>();
                     return true;
                 case AV_PIX_FMT_RGBA:
                 case AV_PIX_FMT_RGB0:
-                    typeInfo = rtti::TypeInfo::get<VideoPixelFormatRGBAHandler>();
+                    typeInfo = rtti::TypeInfo::get<VideoPixelFormatRGBAP8Handler>();
+                    return true;
+                case AV_PIX_FMT_YUV420P16LE:
+                case AV_PIX_FMT_YUV420P16BE:
+                    typeInfo = rtti::TypeInfo::get<VideoPixelFormatYUV420P16Handler>();
                     return true;
                 default:
                     errorState.fail("Unsupported pixel format: %d", pixelFormat);
